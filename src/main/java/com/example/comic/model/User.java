@@ -51,8 +51,9 @@ public class User implements UserDetails {
     @Column(name = "auth_provider")
     private String authProvider;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String role;
+    private UserRole role;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -73,8 +74,8 @@ public class User implements UserDetails {
     @PrePersist
     public void prePersist() {
         Instant now = Instant.now();
-        if (role == null || role.isBlank()) {
-            role = "MEMBER";
+        if (role == null) {
+            role = UserRole.MEMBER;
         }
         if (status == null) {
             status = UserStatus.ACTIVE;
@@ -99,8 +100,8 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-        return List.of(new SimpleGrantedAuthority(authority));
+        UserRole effectiveRole = role == null ? UserRole.MEMBER : role;
+        return List.of(new SimpleGrantedAuthority(effectiveRole.authority()));
     }
 
     @Override

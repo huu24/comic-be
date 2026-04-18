@@ -1,5 +1,6 @@
 package com.example.comic.security;
 
+import com.example.comic.model.UserRole;
 import com.example.comic.security.oauth2.OAuth2LoginFailureHandler;
 import com.example.comic.security.oauth2.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,9 @@ public class SecurityConfiguration {
             .authorizeHttpRequests(auth ->
                 auth
                     .requestMatchers(
+                        "/auth/me",
                         "/auth/register",
+                        "/auth/register-otp",
                         "/auth/login",
                         "/auth/verify-email-otp",
                         "/auth/resend-email-otp",
@@ -47,6 +50,16 @@ public class SecurityConfiguration {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/chapters/*/comments")
                     .permitAll()
+                        .requestMatchers("/admin/**")
+                    .hasRole(UserRole.ADMIN.name())
+                        .requestMatchers(HttpMethod.POST, "/comics")
+                    .hasRole(UserRole.ADMIN.name())
+                        .requestMatchers(HttpMethod.POST, "/comics/*/chapters")
+                    .hasRole(UserRole.ADMIN.name())
+                        .requestMatchers(HttpMethod.POST, "/chapters/*/pages")
+                    .hasRole(UserRole.ADMIN.name())
+                        .requestMatchers(HttpMethod.DELETE, "/chapters/*/pages", "/chapters/pages/*")
+                    .hasRole(UserRole.ADMIN.name())
                     .anyRequest()
                     .authenticated()
             )

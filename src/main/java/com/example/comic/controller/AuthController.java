@@ -1,6 +1,7 @@
 package com.example.comic.controller;
 
 import com.example.comic.model.dto.AuthResponse;
+import com.example.comic.model.dto.AuthMeResponse;
 import com.example.comic.model.dto.LoginRequest;
 import com.example.comic.model.dto.MessageResponse;
 import com.example.comic.model.dto.RegisterRequest;
@@ -8,11 +9,13 @@ import com.example.comic.model.dto.ResendEmailOtpRequest;
 import com.example.comic.model.dto.VerifyEmailOtpRequest;
 import com.example.comic.security.AuthCookieService;
 import com.example.comic.service.AuthService;
+import com.example.comic.service.CurrentUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -26,10 +29,21 @@ public class AuthController {
 
     private final AuthService authService;
     private final AuthCookieService authCookieService;
+    private final CurrentUserService currentUserService;
+
+    @GetMapping("/me")
+    public ResponseEntity<AuthMeResponse> me() {
+        return ResponseEntity.ok(AuthMeResponse.builder().role(currentUserService.resolveRole().name()).build());
+    }
 
     @PostMapping("/register")
-    public ResponseEntity<MessageResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
+    }
+
+    @PostMapping("/register-otp")
+    public ResponseEntity<MessageResponse> registerWithOtp(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerWithOtp(request));
     }
 
     @PostMapping("/verify-email-otp")

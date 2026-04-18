@@ -31,3 +31,42 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Environment & Secrets ###
+.env
+.env.local
+.env.*.local
+
+### Local Storage & Data ###
+minio_data/
+docs/
+
+### Log Files ###
+*.log
+*.log.*
+
+### OS Files ###
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+### Editor Swap Files ###
+*.swp
+*.swo
+*~
+*.bak
+
+### Compiled Class Files ###
+*.class
+
+### Package Files ###
+*.jar
+*.zip
+*.tar.gz
+
+### Postman ###
+postman/

@@ -1,5 +1,6 @@
 package com.example.comic.model.dto;
 
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,13 +10,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ComicSummaryResponse {
+public class AdminUserSummaryResponse {
+
     private Long id;
-    private String title;
-    private String author;
-    private String coverImageUrl;
-    private String originalLanguage;
+    private String fullName;
+    private String email;
+    private String role;
     private String status;
-    private String format;
-    private Double averageRating;
+    private Instant createdAt;
 }

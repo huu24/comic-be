@@ -4,6 +4,7 @@ import com.example.comic.exception.AlreadyExistsException;
 import com.example.comic.exception.PermissionDeniedException;
 import com.example.comic.exception.UnauthenticatedException;
 import com.example.comic.model.User;
+import com.example.comic.model.UserRole;
 import com.example.comic.model.UserStatus;
 import com.example.comic.model.dto.AuthResponse;
 import com.example.comic.model.dto.AuthUserResponse;
@@ -39,7 +40,30 @@ public class AuthService {
     private final EmailOtpService emailOtpService;
 
     @Transactional
-    public MessageResponse register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request) {
+        String email = normalizeEmail(request.getEmail());
+        String fullName = request.getFullName() == null ? null : request.getFullName().trim();
+
+        if (userRepository.existsByEmail(email)) {
+            throw new AlreadyExistsException("Email này đã được đăng ký trong hệ thống.");
+        }
+
+        User user = User
+            .builder()
+            .email(email)
+            .passwordHash(passwordEncoder.encode(request.getPassword()))
+            .fullName(fullName)
+            .role(UserRole.MEMBER)
+            .status(UserStatus.ACTIVE)
+            .build();
+
+        User savedUser = userRepository.save(Objects.requireNonNull(user));
+        String token = jwtService.generateToken(savedUser);
+        return AuthResponse.builder().token(token).user(toAuthUser(savedUser)).build();
+    }
+
+    @Transactional
+    public MessageResponse registerWithOtp(RegisterRequest request) {
         String email = normalizeEmail(request.getEmail());
         String fullName = request.getFullName() == null ? null : request.getFullName().trim();
 
@@ -70,7 +94,7 @@ public class AuthService {
             .email(email)
             .passwordHash(passwordEncoder.encode(request.getPassword()))
             .fullName(fullName)
-            .role("MEMBER")
+            .role(UserRole.MEMBER)
             .status(UserStatus.PENDING_VERIFICATION)
             .build();
 
@@ -203,7 +227,7 @@ public class AuthService {
                 .fullName(effectiveFullName)
                 .avatarUrl(avatarUrl)
                 .authProvider("GOOGLE")
-                .role("MEMBER")
+                .role(UserRole.MEMBER)
                 .status(UserStatus.ACTIVE)
                 .build();
         } else {
@@ -233,7 +257,7 @@ public class AuthService {
             .id(user.getId())
             .email(user.getEmail())
             .fullName(user.getFullName())
-            .role(user.getRole())
+            .role(user.getRole() == null ? null : user.getRole().name())
             .build();
     }
 

@@ -8,7 +8,9 @@ import com.example.comic.model.dto.ErrorResponse;
 import java.time.format.DateTimeParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -44,6 +46,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({ IllegalArgumentException.class, DateTimeParseException.class })
     public ResponseEntity<ErrorResponse> handleInvalidArgument(Exception ex) {
         return build(HttpStatus.BAD_REQUEST, "INVALID_ARGUMENT", ex.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String parameter = ex.getName();
+        return build(HttpStatus.BAD_REQUEST, "INVALID_ARGUMENT", "Giá trị tham số '" + parameter + "' không hợp lệ.");
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex) {
+        return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "INVALID_ARGUMENT", "Content-Type không được hỗ trợ.");
     }
 
     @ExceptionHandler(Exception.class)

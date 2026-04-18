@@ -9,13 +9,14 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ComicSummaryResponse {
+public class ComicCreateResponse {
+
     private Long id;
     private String title;
+    private String description;
     private String author;
     private String coverImageUrl;
     private String originalLanguage;
-    private String status;
     private String format;
-    private Double averageRating;
+    private String status;
 }

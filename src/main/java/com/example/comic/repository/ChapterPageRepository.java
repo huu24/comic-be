@@ -6,4 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ChapterPageRepository extends JpaRepository<ChapterPage, Long> {
     List<ChapterPage> findByChapterIdOrderByPageNumberAsc(Long chapterId);
+
+    List<ChapterPage> findByChapterIdAndPageNumber(Long chapterId, Integer pageNumber);
+
+    boolean existsByChapterIdAndPageNumberBetween(Long chapterId, Integer startPageNumber, Integer endPageNumber);
+
+    void deleteByChapterId(Long chapterId);
 }

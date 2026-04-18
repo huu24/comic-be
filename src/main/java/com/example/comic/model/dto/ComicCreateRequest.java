@@ -1,5 +1,6 @@
 package com.example.comic.model.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,13 +10,21 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ComicSummaryResponse {
-    private Long id;
+public class ComicCreateRequest {
+
+    @NotBlank(message = "Tên truyện là bắt buộc.")
     private String title;
+
+    private String description;
+
     private String author;
+
     private String coverImageUrl;
+
     private String originalLanguage;
-    private String status;
+
+    @NotBlank(message = "Định dạng truyện là bắt buộc.")
     private String format;
-    private Double averageRating;
+
+    private String status;
 }
