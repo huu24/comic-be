@@ -1,6 +1,7 @@
 package com.example.comic.service;
 
 import io.minio.BucketExistsArgs;
+import io.minio.GetObjectArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -38,25 +39,27 @@ public class MinioStorageService {
             if (ex instanceof InterruptedException || ex.getCause() instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            log.warn("Không thể kiểm tra hoặc tạo bucket MinIO '{}' khi khởi động. Ứng dụng vẫn tiếp tục chạy.", bucketName, ex);
+            log.warn("Không thể kiểm tra hoặc tạo bucket MinIO '{}' khi khởi động. Ứng dụng vẫn tiếp tục chạy.",
+                    bucketName, ex);
         }
     }
 
     public String uploadComicPage(Long chapterId, Integer pageNumber, MultipartFile file) {
         String originalName = file.getOriginalFilename() == null ? "page" : file.getOriginalFilename();
         String extension = getExtension(originalName);
-        String objectName = String.format("chapters/%d/pages/%03d-%s%s", chapterId, pageNumber, UUID.randomUUID(), extension);
+        String objectName = String.format("chapters/%d/pages/%03d-%s%s", chapterId, pageNumber, UUID.randomUUID(),
+                extension);
 
         try (InputStream inputStream = file.getInputStream()) {
             minioClient.putObject(
-                PutObjectArgs
-                    .builder()
-                    .bucket(bucketName)
-                    .object(objectName)
-                    .stream(inputStream, file.getSize(), 10 * 1024 * 1024L)
-                    .contentType(file.getContentType() == null ? "application/octet-stream" : file.getContentType())
-                    .build()
-            );
+                    PutObjectArgs
+                            .builder()
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .stream(inputStream, file.getSize(), 10 * 1024 * 1024L)
+                            .contentType(
+                                    file.getContentType() == null ? "application/octet-stream" : file.getContentType())
+                            .build());
             return objectName;
         } catch (Exception ex) {
             throw new IllegalStateException("Không thể tải ảnh lên MinIO.", ex);
@@ -71,6 +74,18 @@ public class MinioStorageService {
             minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucketName).object(objectName).build());
         } catch (Exception ex) {
             throw new IllegalStateException("Không thể xóa ảnh trên MinIO.", ex);
+        }
+    }
+
+    public String downloadObjectAsString(String objectName) {
+        if (objectName == null || objectName.isBlank()) {
+            return null;
+        }
+        try (InputStream is = minioClient.getObject(
+                GetObjectArgs.builder().bucket(bucketName).object(objectName).build())) {
+            return new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Không thể tải file từ MinIO: " + objectName, ex);
         }
     }
 

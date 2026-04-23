@@ -39,8 +39,8 @@ public class ChapterPage {
     @Column(name = "cleaned_image_url")
     private String cleanedImageUrl;
 
-    @Column(name = "ai_metadata", columnDefinition = "TEXT")
-    private String aiMetadata;
+    @Column(name = "original_metadata_url")
+    private String originalMetadataUrl;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

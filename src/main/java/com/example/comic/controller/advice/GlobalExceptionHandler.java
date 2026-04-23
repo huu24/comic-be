@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -59,6 +60,12 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "INVALID_ARGUMENT", "Content-Type không được hỗ trợ.");
     }
 
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParam(MissingServletRequestParameterException ex) {
+        return build(HttpStatus.BAD_REQUEST, "INVALID_ARGUMENT",
+                "Thiếu tham số bắt buộc: '" + ex.getParameterName() + "'.");
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleOther(Exception ex) {
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL", "Đã có lỗi hệ thống xảy ra.");
@@ -66,19 +73,17 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String errorStatus, String message) {
         return ResponseEntity
-            .status(status)
-            .body(
-                ErrorResponse
-                    .builder()
-                    .error(
-                        ErrorResponse.ErrorDetail
-                            .builder()
-                            .code(status.value())
-                            .status(errorStatus)
-                            .message(message)
-                            .build()
-                    )
-                    .build()
-            );
+                .status(status)
+                .body(
+                        ErrorResponse
+                                .builder()
+                                .error(
+                                        ErrorResponse.ErrorDetail
+                                                .builder()
+                                                .code(status.value())
+                                                .status(errorStatus)
+                                                .message(message)
+                                                .build())
+                                .build());
     }
 }

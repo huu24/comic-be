@@ -19,7 +19,7 @@ import com.example.comic.repository.ChapterPageRepository;
 import com.example.comic.repository.ChapterRepository;
 import com.example.comic.repository.ComicRatingRepository;
 import com.example.comic.repository.ComicRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -50,7 +50,6 @@ class ComicServiceTest {
     private ComicRatingRepository comicRatingRepository;
     private CurrentUserService currentUserService;
     private MinioStorageService minioStorageService;
-    private ObjectMapper objectMapper;
     private ComicService comicService;
 
     @BeforeEach
@@ -61,16 +60,13 @@ class ComicServiceTest {
         comicRatingRepository = mock(ComicRatingRepository.class);
         currentUserService = mock(CurrentUserService.class);
         minioStorageService = mock(MinioStorageService.class);
-        objectMapper = new ObjectMapper();
         comicService = new ComicService(
-            comicRepository,
-            chapterRepository,
-            chapterPageRepository,
-            comicRatingRepository,
-            currentUserService,
-            minioStorageService,
-            objectMapper
-        );
+                comicRepository,
+                chapterRepository,
+                chapterPageRepository,
+                comicRatingRepository,
+                currentUserService,
+                minioStorageService);
     }
 
     @Test
@@ -84,16 +80,15 @@ class ComicServiceTest {
         });
 
         ComicCreateResponse response = comicService.createComic(
-            ComicCreateRequest.builder()
-                .title("  One Piece  ")
-                .description("  Epic  ")
-                .author("  Oda  ")
-                .coverImageUrl("  cover.png  ")
-                .originalLanguage("  Japanese  ")
-                .format("  MANGA  ")
-                .status("  ACTIVE  ")
-                .build()
-        );
+                ComicCreateRequest.builder()
+                        .title("  One Piece  ")
+                        .description("  Epic  ")
+                        .author("  Oda  ")
+                        .coverImageUrl("  cover.png  ")
+                        .originalLanguage("  Japanese  ")
+                        .format("  MANGA  ")
+                        .status("  ACTIVE  ")
+                        .build());
 
         assertEquals(11L, response.getId());
         assertEquals("One Piece", response.getTitle());
@@ -108,7 +103,8 @@ class ComicServiceTest {
     @Test
     void createChapter_shouldReturnCreatedResponse() {
         when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
-        when(comicRepository.findById(10L)).thenReturn(Optional.of(Comic.builder().id(10L).title("Comic").format("MANGA").status("ACTIVE").build()));
+        when(comicRepository.findById(10L)).thenReturn(
+                Optional.of(Comic.builder().id(10L).title("Comic").format("MANGA").status("ACTIVE").build()));
         when(chapterRepository.existsByComicIdAndChapterNumber(10L, 3)).thenReturn(false);
         when(chapterRepository.save(any(Chapter.class))).thenAnswer(invocation -> {
             Chapter chapter = invocation.getArgument(0);
@@ -116,7 +112,8 @@ class ComicServiceTest {
             return chapter;
         });
 
-        ChapterCreateResponse response = comicService.createChapter(10L, ChapterCreateRequest.builder().chapterNumber(3).title("  Start  ").build());
+        ChapterCreateResponse response = comicService.createChapter(10L,
+                ChapterCreateRequest.builder().chapterNumber(3).title("  Start  ").build());
 
         assertEquals(77L, response.getId());
         assertEquals(10L, response.getComicId());
@@ -129,26 +126,29 @@ class ComicServiceTest {
         when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
         when(comicRepository.findById(10L)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> comicService.createChapter(10L, ChapterCreateRequest.builder().chapterNumber(1).build()));
+        assertThrows(NotFoundException.class,
+                () -> comicService.createChapter(10L, ChapterCreateRequest.builder().chapterNumber(1).build()));
 
-        when(comicRepository.findById(10L)).thenReturn(Optional.of(Comic.builder().id(10L).title("Comic").format("MANGA").status("ACTIVE").build()));
+        when(comicRepository.findById(10L)).thenReturn(
+                Optional.of(Comic.builder().id(10L).title("Comic").format("MANGA").status("ACTIVE").build()));
         when(chapterRepository.existsByComicIdAndChapterNumber(10L, 1)).thenReturn(true);
 
-        assertThrows(AlreadyExistsException.class, () -> comicService.createChapter(10L, ChapterCreateRequest.builder().chapterNumber(1).build()));
+        assertThrows(AlreadyExistsException.class,
+                () -> comicService.createChapter(10L, ChapterCreateRequest.builder().chapterNumber(1).build()));
     }
 
     @Test
     void getComics_shouldNormalizeFiltersAndMapResponse() {
         when(comicRepository.search(eq("Naruto"), eq(2L), eq("jp"), eq("active"), any()))
-            .thenReturn(
-                new PageImpl<>(
-                    List.of(Comic.builder().id(1L).title("Naruto").format("MANGA").status("ACTIVE").averageRating(null).build()),
-                    PageRequest.of(0, 20),
-                    1
-                )
-            );
+                .thenReturn(
+                        new PageImpl<>(
+                                List.of(Comic.builder().id(1L).title("Naruto").format("MANGA").status("ACTIVE")
+                                        .averageRating(null).build()),
+                                PageRequest.of(0, 20),
+                                1));
 
-        PageDataResponse<ComicSummaryResponse> response = comicService.getComics("  Naruto  ", 2L, "  jp  ", "  active  ", -1, 0);
+        PageDataResponse<ComicSummaryResponse> response = comicService.getComics("  Naruto  ", 2L, "  jp  ",
+                "  active  ", -1, 0);
 
         assertEquals(1, response.getContent().size());
         assertEquals(0D, response.getContent().get(0).getAverageRating());
@@ -158,22 +158,24 @@ class ComicServiceTest {
     }
 
     @Test
-    void getChapterPages_shouldMapUrlsAndMetadata() throws Exception {
+    void getChapterPages_shouldMapUrlsAndMetadata() {
         when(chapterRepository.findById(5L)).thenReturn(Optional.of(Chapter.builder().id(5L).comicId(1L).build()));
         when(chapterPageRepository.findByChapterIdOrderByPageNumberAsc(5L))
-            .thenReturn(
-                List.of(
-                    ChapterPage.builder().id(9L).chapterId(5L).pageNumber(1).imageUrl("pages/1.png").cleanedImageUrl("cleaned/1.png").aiMetadata("{\"ocr\":true}").build()
-                )
-            );
+                .thenReturn(
+                        List.of(
+                                ChapterPage.builder().id(9L).chapterId(5L).pageNumber(1).imageUrl("pages/1.png")
+                                        .cleanedImageUrl("cleaned/1.png").originalMetadataUrl("metadata/original.json")
+                                        .build()));
         when(minioStorageService.resolvePublicUrl("pages/1.png")).thenReturn("http://cdn/pages/1.png");
         when(minioStorageService.resolvePublicUrl("cleaned/1.png")).thenReturn("http://cdn/cleaned/1.png");
+        when(minioStorageService.resolvePublicUrl("metadata/original.json"))
+                .thenReturn("http://cdn/metadata/original.json");
 
         List<ChapterPageResponse> pages = comicService.getChapterPages(5L);
 
         assertEquals(1, pages.size());
         assertEquals("http://cdn/pages/1.png", pages.get(0).getImageUrl());
-        assertTrue(pages.get(0).getAiMetadata().get("ocr").asBoolean());
+        assertEquals("http://cdn/metadata/original.json", pages.get(0).getOriginalMetadataUrl());
     }
 
     @Test
@@ -191,16 +193,15 @@ class ComicServiceTest {
         when(minioStorageService.uploadComicPage(eq(5L), eq(1), any())).thenReturn("pages/1.png");
         when(minioStorageService.uploadComicPage(eq(5L), eq(2), any())).thenReturn("pages/2.png");
         when(chapterPageRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(minioStorageService.resolvePublicUrl(any())).thenAnswer(invocation -> "public:" + invocation.getArgument(0));
+        when(minioStorageService.resolvePublicUrl(any()))
+                .thenAnswer(invocation -> "public:" + invocation.getArgument(0));
 
         List<ChapterPageResponse> responses = comicService.uploadChapterPages(
-            5L,
-            1,
-            List.of(
-                new MockMultipartFile("files", "a.png", "image/png", "aaa".getBytes()),
-                new MockMultipartFile("files", "b.jpg", "image/jpeg", "bbb".getBytes())
-            )
-        );
+                5L,
+                1,
+                List.of(
+                        new MockMultipartFile("files", "a.png", "image/png", "aaa".getBytes()),
+                        new MockMultipartFile("files", "b.jpg", "image/jpeg", "bbb".getBytes())));
 
         assertEquals(2, responses.size());
         assertEquals("public:pages/1.png", responses.get(0).getImageUrl());
@@ -214,22 +215,22 @@ class ComicServiceTest {
 
         assertThrows(IllegalArgumentException.class, () -> comicService.uploadChapterPages(5L, 1, List.of()));
         assertThrows(
-            IllegalArgumentException.class,
-            () -> comicService.uploadChapterPages(5L, 1, List.of(new MockMultipartFile("files", "bad.txt", "text/plain", "x".getBytes())))
-        );
+                IllegalArgumentException.class,
+                () -> comicService.uploadChapterPages(5L, 1,
+                        List.of(new MockMultipartFile("files", "bad.txt", "text/plain", "x".getBytes()))));
         when(chapterPageRepository.existsByChapterIdAndPageNumberBetween(5L, 1, 1)).thenReturn(true);
         assertThrows(
-            AlreadyExistsException.class,
-            () -> comicService.uploadChapterPages(5L, 1, List.of(new MockMultipartFile("files", "a.png", "image/png", "aaa".getBytes())))
-        );
+                AlreadyExistsException.class,
+                () -> comicService.uploadChapterPages(5L, 1,
+                        List.of(new MockMultipartFile("files", "a.png", "image/png", "aaa".getBytes()))));
     }
 
     @Test
     void deleteChapterPage_shouldDeleteStorageAndDatabase() {
         when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
         when(chapterPageRepository.findById(9L)).thenReturn(
-            Optional.of(ChapterPage.builder().id(9L).chapterId(5L).imageUrl("pages/1.png").cleanedImageUrl("cleaned/1.png").build())
-        );
+                Optional.of(ChapterPage.builder().id(9L).chapterId(5L).imageUrl("pages/1.png")
+                        .cleanedImageUrl("cleaned/1.png").build()));
 
         comicService.deleteChapterPage(9L);
 
@@ -243,11 +244,9 @@ class ComicServiceTest {
         when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
         when(chapterRepository.findById(5L)).thenReturn(Optional.of(Chapter.builder().id(5L).comicId(1L).build()));
         when(chapterPageRepository.findByChapterIdOrderByPageNumberAsc(5L)).thenReturn(
-            List.of(
-                ChapterPage.builder().id(1L).imageUrl("pages/1.png").cleanedImageUrl("cleaned/1.png").build(),
-                ChapterPage.builder().id(2L).imageUrl("pages/2.png").cleanedImageUrl(null).build()
-            )
-        );
+                List.of(
+                        ChapterPage.builder().id(1L).imageUrl("pages/1.png").cleanedImageUrl("cleaned/1.png").build(),
+                        ChapterPage.builder().id(2L).imageUrl("pages/2.png").cleanedImageUrl(null).build()));
 
         comicService.deleteChapterPages(5L);
 
@@ -263,8 +262,10 @@ class ComicServiceTest {
     void rateComic_shouldUpdateExistingRatingAndComic() {
         User current = user(3L, "user@example.com");
         when(currentUserService.requireUser()).thenReturn(current);
-        when(comicRepository.findById(11L)).thenReturn(Optional.of(Comic.builder().id(11L).title("Comic").format("MANGA").status("ACTIVE").build()));
-        when(comicRatingRepository.findByUserIdAndComicId(3L, 11L)).thenReturn(Optional.of(ComicRating.builder().userId(3L).comicId(11L).score(4).build()));
+        when(comicRepository.findById(11L)).thenReturn(
+                Optional.of(Comic.builder().id(11L).title("Comic").format("MANGA").status("ACTIVE").build()));
+        when(comicRatingRepository.findByUserIdAndComicId(3L, 11L))
+                .thenReturn(Optional.of(ComicRating.builder().userId(3L).comicId(11L).score(4).build()));
         when(comicRatingRepository.avgScoreByComicId(11L)).thenReturn(4.5);
         when(comicRatingRepository.countByComicId(11L)).thenReturn(10L);
         when(comicRepository.save(any(Comic.class))).thenAnswer(invocation -> invocation.getArgument(0));

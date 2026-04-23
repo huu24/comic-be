@@ -9,10 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChapterPageResponse {
-    private Long id;
-    private Integer pageNumber;
-    private String imageUrl;
-    private String cleanedImageUrl;
-    private String originalMetadataUrl;
+public class PageImagesResponse {
+    private String originalUrl;
+    private String inpaintedUrl;
 }

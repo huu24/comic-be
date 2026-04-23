@@ -19,8 +19,7 @@ import com.example.comic.repository.ChapterPageRepository;
 import com.example.comic.repository.ChapterRepository;
 import com.example.comic.repository.ComicRatingRepository;
 import com.example.comic.repository.ComicRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -48,35 +47,34 @@ public class ComicService {
     private final ComicRatingRepository comicRatingRepository;
     private final CurrentUserService currentUserService;
     private final MinioStorageService minioStorageService;
-    private final ObjectMapper objectMapper;
 
     @Transactional
     public ComicCreateResponse createComic(ComicCreateRequest request) {
         currentUserService.requireAdmin();
 
         Comic comic = Comic
-            .builder()
-            .title(request.getTitle().trim())
-            .description(trimToNull(request.getDescription()))
-            .author(trimToNull(request.getAuthor()))
-            .coverImageUrl(trimToNull(request.getCoverImageUrl()))
-            .originalLanguage(trimToNull(request.getOriginalLanguage()))
-            .format(request.getFormat().trim())
-            .status(trimToNull(request.getStatus()))
-            .build();
+                .builder()
+                .title(request.getTitle().trim())
+                .description(trimToNull(request.getDescription()))
+                .author(trimToNull(request.getAuthor()))
+                .coverImageUrl(trimToNull(request.getCoverImageUrl()))
+                .originalLanguage(trimToNull(request.getOriginalLanguage()))
+                .format(request.getFormat().trim())
+                .status(trimToNull(request.getStatus()))
+                .build();
 
         Comic savedComic = comicRepository.save(comic);
         return ComicCreateResponse
-            .builder()
-            .id(savedComic.getId())
-            .title(savedComic.getTitle())
-            .description(savedComic.getDescription())
-            .author(savedComic.getAuthor())
-            .coverImageUrl(savedComic.getCoverImageUrl())
-            .originalLanguage(savedComic.getOriginalLanguage())
-            .format(savedComic.getFormat())
-            .status(savedComic.getStatus())
-            .build();
+                .builder()
+                .id(savedComic.getId())
+                .title(savedComic.getTitle())
+                .description(savedComic.getDescription())
+                .author(savedComic.getAuthor())
+                .coverImageUrl(savedComic.getCoverImageUrl())
+                .originalLanguage(savedComic.getOriginalLanguage())
+                .format(savedComic.getFormat())
+                .status(savedComic.getStatus())
+                .build();
     }
 
     @Transactional
@@ -90,89 +88,86 @@ public class ComicService {
         }
 
         Chapter chapter = Chapter
-            .builder()
-            .comicId(comicId)
-            .chapterNumber(request.getChapterNumber())
-            .title(trimToNull(request.getTitle()))
-            .build();
+                .builder()
+                .comicId(comicId)
+                .chapterNumber(request.getChapterNumber())
+                .title(trimToNull(request.getTitle()))
+                .build();
         Chapter savedChapter = chapterRepository.save(chapter);
 
         return ChapterCreateResponse
-            .builder()
-            .id(savedChapter.getId())
-            .comicId(savedChapter.getComicId())
-            .chapterNumber(savedChapter.getChapterNumber())
-            .title(savedChapter.getTitle())
-            .build();
+                .builder()
+                .id(savedChapter.getId())
+                .comicId(savedChapter.getComicId())
+                .chapterNumber(savedChapter.getChapterNumber())
+                .title(savedChapter.getTitle())
+                .build();
     }
 
     @Transactional(readOnly = true)
     public PageDataResponse<ComicSummaryResponse> getComics(
-        String keyword,
-        Long categoryId,
-        String originalLanguage,
-        String comicStatus,
-        int page,
-        int size
-    ) {
+            String keyword,
+            Long categoryId,
+            String originalLanguage,
+            String comicStatus,
+            int page,
+            int size) {
         Pageable pageable = PageRequest.of(normalizePage(page), normalizeSize(size));
         Page<Comic> comics = comicRepository.search(
-            normalizeFilter(keyword),
-            categoryId,
-            normalizeFilter(originalLanguage),
-            normalizeFilter(comicStatus),
-            pageable
-        );
+                normalizeFilter(keyword),
+                categoryId,
+                normalizeFilter(originalLanguage),
+                normalizeFilter(comicStatus),
+                pageable);
         List<ComicSummaryResponse> content = comics
-            .getContent()
-            .stream()
-            .map(c ->
-                ComicSummaryResponse
-                    .builder()
-                    .id(c.getId())
-                    .title(c.getTitle())
-                    .author(c.getAuthor())
-                    .coverImageUrl(c.getCoverImageUrl())
-                    .originalLanguage(c.getOriginalLanguage())
-                    .status(c.getStatus())
-                    .format(c.getFormat())
-                    .averageRating(c.getAverageRating() == null ? 0D : c.getAverageRating())
-                    .build()
-            )
-            .toList();
+                .getContent()
+                .stream()
+                .map(c -> ComicSummaryResponse
+                        .builder()
+                        .id(c.getId())
+                        .title(c.getTitle())
+                        .author(c.getAuthor())
+                        .coverImageUrl(c.getCoverImageUrl())
+                        .originalLanguage(c.getOriginalLanguage())
+                        .status(c.getStatus())
+                        .format(c.getFormat())
+                        .averageRating(c.getAverageRating() == null ? 0D : c.getAverageRating())
+                        .build())
+                .toList();
 
         return PageDataResponse
-            .<ComicSummaryResponse>builder()
-            .content(content)
-            .pageNo(comics.getNumber())
-            .pageSize(comics.getSize())
-            .totalElements(comics.getTotalElements())
-            .totalPages(comics.getTotalPages())
-            .last(comics.isLast())
-            .build();
+                .<ComicSummaryResponse>builder()
+                .content(content)
+                .pageNo(comics.getNumber())
+                .pageSize(comics.getSize())
+                .totalElements(comics.getTotalElements())
+                .totalPages(comics.getTotalPages())
+                .last(comics.isLast())
+                .build();
     }
 
     @Transactional(readOnly = true)
     public List<ChapterPageResponse> getChapterPages(Long chapterId) {
         Chapter chapter = chapterRepository
-            .findById(chapterId)
-            .orElseThrow(() -> new NotFoundException("Không tìm thấy chương truyện."));
+                .findById(chapterId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy chương truyện."));
 
         List<ChapterPage> pages = chapterPageRepository.findByChapterIdOrderByPageNumberAsc(chapter.getId());
 
         return pages
-            .stream()
-            .map(this::toPageResponse)
-            .toList();
+                .stream()
+                .map(this::toPageResponse)
+                .toList();
     }
 
     @Transactional
-    public List<ChapterPageResponse> uploadChapterPages(Long chapterId, int startPageNumber, List<MultipartFile> files) {
+    public List<ChapterPageResponse> uploadChapterPages(Long chapterId, int startPageNumber,
+            List<MultipartFile> files) {
         currentUserService.requireAdmin();
 
         chapterRepository
-            .findById(chapterId)
-            .orElseThrow(() -> new NotFoundException("Không tìm thấy chương truyện."));
+                .findById(chapterId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy chương truyện."));
 
         if (files == null || files.isEmpty()) {
             throw new IllegalArgumentException("Vui lòng chọn ít nhất một ảnh để tải lên.");
@@ -183,18 +178,19 @@ public class ComicService {
         int pageNumber = Math.max(1, startPageNumber);
         int endPageNumber = pageNumber + files.size() - 1;
         if (chapterPageRepository.existsByChapterIdAndPageNumberBetween(chapterId, pageNumber, endPageNumber)) {
-            throw new AlreadyExistsException("Khoảng số trang bị trùng với dữ liệu đã có. Vui lòng đổi startPageNumber.");
+            throw new AlreadyExistsException(
+                    "Khoảng số trang bị trùng với dữ liệu đã có. Vui lòng đổi startPageNumber.");
         }
 
         List<ChapterPage> pagesToSave = new java.util.ArrayList<>(files.size());
         for (MultipartFile file : files) {
             String objectName = minioStorageService.uploadComicPage(chapterId, pageNumber, file);
             ChapterPage page = ChapterPage
-                .builder()
-                .chapterId(chapterId)
-                .pageNumber(pageNumber)
-                .imageUrl(objectName)
-                .build();
+                    .builder()
+                    .chapterId(chapterId)
+                    .pageNumber(pageNumber)
+                    .imageUrl(objectName)
+                    .build();
             pagesToSave.add(page);
             pageNumber++;
         }
@@ -209,8 +205,8 @@ public class ComicService {
         currentUserService.requireAdmin();
 
         ChapterPage page = chapterPageRepository
-            .findById(pageId)
-            .orElseThrow(() -> new NotFoundException("Không tìm thấy trang truyện."));
+                .findById(pageId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy trang truyện."));
 
         minioStorageService.deleteObject(page.getImageUrl());
         minioStorageService.deleteObject(page.getCleanedImageUrl());
@@ -222,8 +218,8 @@ public class ComicService {
         currentUserService.requireAdmin();
 
         chapterRepository
-            .findById(chapterId)
-            .orElseThrow(() -> new NotFoundException("Không tìm thấy chương truyện."));
+                .findById(chapterId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy chương truyện."));
 
         List<ChapterPage> pages = chapterPageRepository.findByChapterIdOrderByPageNumberAsc(chapterId);
         for (ChapterPage page : pages) {
@@ -237,14 +233,13 @@ public class ComicService {
     public ComicRatingResponse rateComic(Long comicId, int score) {
         User current = currentUserService.requireUser();
         Comic comic = comicRepository
-            .findById(comicId)
-            .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
+                .findById(comicId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
 
         ComicRating rating = comicRatingRepository
-            .findByUserIdAndComicId(current.getId(), comicId)
-            .orElse(
-                ComicRating.builder().userId(current.getId()).comicId(comicId).build()
-            );
+                .findByUserIdAndComicId(current.getId(), comicId)
+                .orElse(
+                        ComicRating.builder().userId(current.getId()).comicId(comicId).build());
         rating.setScore(score);
         comicRatingRepository.save(rating);
 
@@ -256,17 +251,6 @@ public class ComicService {
         comicRepository.save(comic);
 
         return ComicRatingResponse.builder().newAverageRating(avg).totalRatings(total).build();
-    }
-
-    private JsonNode parseJson(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-        try {
-            return objectMapper.readTree(raw);
-        } catch (Exception ex) {
-            return null;
-        }
     }
 
     private int normalizePage(int page) {
@@ -310,7 +294,8 @@ public class ComicService {
             String extension = extractExtension(fileName);
             String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
             boolean validContentType = contentType.startsWith("image/");
-            boolean validExtension = extension != null && ALLOWED_IMAGE_EXTENSIONS.contains(extension.toLowerCase(Locale.ROOT));
+            boolean validExtension = extension != null
+                    && ALLOWED_IMAGE_EXTENSIONS.contains(extension.toLowerCase(Locale.ROOT));
 
             if (!validContentType || !validExtension) {
                 throw new IllegalArgumentException("Chỉ chấp nhận các định dạng hình ảnh: JPG, PNG, WEBP.");
@@ -331,12 +316,12 @@ public class ComicService {
 
     private ChapterPageResponse toPageResponse(ChapterPage page) {
         return ChapterPageResponse
-            .builder()
-            .id(page.getId())
-            .pageNumber(page.getPageNumber())
-            .imageUrl(minioStorageService.resolvePublicUrl(page.getImageUrl()))
-            .cleanedImageUrl(minioStorageService.resolvePublicUrl(page.getCleanedImageUrl()))
-            .aiMetadata(parseJson(page.getAiMetadata()))
-            .build();
+                .builder()
+                .id(page.getId())
+                .pageNumber(page.getPageNumber())
+                .imageUrl(minioStorageService.resolvePublicUrl(page.getImageUrl()))
+                .cleanedImageUrl(minioStorageService.resolvePublicUrl(page.getCleanedImageUrl()))
+                .originalMetadataUrl(minioStorageService.resolvePublicUrl(page.getOriginalMetadataUrl()))
+                .build();
     }
 }
