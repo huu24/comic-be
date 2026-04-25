@@ -310,6 +310,16 @@ class AuthServiceTest {
     }
 
     @Test
+    void login_shouldRejectMissingAccount() {
+        when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+
+        assertThrows(
+            UnauthenticatedException.class,
+            () -> authService.login(LoginRequest.builder().email("missing@example.com").password("pwd").build())
+        );
+    }
+
+    @Test
     void login_shouldRejectPendingAndLockedUsersBeforeAuthentication() {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user(1L, "test@example.com", UserRole.MEMBER, UserStatus.PENDING_VERIFICATION)));
         assertThrows(
@@ -359,6 +369,11 @@ class AuthServiceTest {
 
         assertEquals("Đăng xuất thành công.", response.getMessage());
         verify(tokenRevocationService).revoke(eq("cookie-token"), any(Date.class));
+    }
+
+    @Test
+    void logout_shouldRejectWhenHeaderIsNotBearerAndCookieMissing() {
+        assertThrows(UnauthenticatedException.class, () -> authService.logout("Basic token", null));
     }
 
     @Test
@@ -450,6 +465,22 @@ class AuthServiceTest {
         AuthResponse response = authService.authenticateGoogleUser("new@example.com", " New User ", "avatar");
 
         assertEquals("New User", response.getUser().getFullName());
+    }
+
+    @Test
+    void authenticateGoogleUser_shouldUseEmailPrefixWhenNewUserFullNameNull() {
+        when(userRepository.findByEmail("nullname@example.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(any())).thenReturn("hashed");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            user.setId(101L);
+            return user;
+        });
+        when(jwtService.generateToken(any(User.class))).thenReturn("jwt-token");
+
+        AuthResponse response = authService.authenticateGoogleUser("nullname@example.com", null, "avatar");
+
+        assertEquals("nullname", response.getUser().getFullName());
     }
 
     @Test

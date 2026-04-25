@@ -131,6 +131,59 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
+    void doFilterInternal_shouldFallbackToCookieWhenAuthorizationHeaderIsNotBearer() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Basic abc");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = Mockito.mock(FilterChain.class);
+
+        UserDetails userDetails = User.withUsername("cookie2@example.com").password("pwd").authorities("ROLE_MEMBER").build();
+        when(authCookieService.resolveToken(request)).thenReturn("cookie-token-2");
+        when(tokenRevocationService.isRevoked("cookie-token-2")).thenReturn(false);
+        when(jwtService.extractUsername("cookie-token-2")).thenReturn("cookie2@example.com");
+        when(userDetailsService.loadUserByUsername("cookie2@example.com")).thenReturn(userDetails);
+        when(jwtService.isTokenValid("cookie-token-2", userDetails)).thenReturn(true);
+
+        filter.doFilter(request, response, chain);
+
+        assertNotNull(SecurityContextHolder.getContext().getAuthentication());
+        assertEquals("cookie2@example.com", SecurityContextHolder.getContext().getAuthentication().getName());
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_shouldContinueWhenResolvedTokenIsBlank() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = Mockito.mock(FilterChain.class);
+
+        when(authCookieService.resolveToken(request)).thenReturn("   ");
+
+        filter.doFilter(request, response, chain);
+
+        verify(tokenRevocationService, never()).isRevoked(any());
+        verify(chain).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void doFilterInternal_shouldContinueWhenExtractedEmailIsNull() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer token-without-email");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = Mockito.mock(FilterChain.class);
+
+        when(tokenRevocationService.isRevoked("token-without-email")).thenReturn(false);
+        when(jwtService.extractUsername("token-without-email")).thenReturn(null);
+
+        filter.doFilter(request, response, chain);
+
+        verify(userDetailsService, never()).loadUserByUsername(any());
+        verify(chain).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
     void doFilterInternal_shouldNotAuthenticateWhenTokenValidationFails() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Authorization", "Bearer invalid-token");

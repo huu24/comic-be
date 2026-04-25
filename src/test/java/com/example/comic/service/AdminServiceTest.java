@@ -262,6 +262,20 @@ class AdminServiceTest {
         assertThrows(IllegalArgumentException.class, () -> adminService.updateUserStatus(2L, null));
     }
 
+    @Test
+    void updateUserRole_shouldReturnNullStatusWhenTargetStatusIsNull() {
+        User admin = user(1L, "admin@comic.local", UserRole.ADMIN, UserStatus.ACTIVE);
+        User target = user(2L, "member@comic.local", UserRole.MEMBER, UserStatus.ACTIVE);
+        target.setStatus(null);
+        when(currentUserService.requireAdmin()).thenReturn(admin);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(target));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AdminUserSummaryResponse response = adminService.updateUserRole(2L, "MEMBER");
+
+        assertNull(response.getStatus());
+    }
+
     private static User user(Long id, String email, UserRole role, UserStatus status) {
         return User
             .builder()

@@ -412,6 +412,45 @@ class ComicServiceTest {
         }
 
         @Test
+        void uploadChapterPages_shouldRejectNullFilesList() {
+                when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
+                when(chapterRepository.findById(5L)).thenReturn(Optional.of(Chapter.builder().id(5L).comicId(1L).build()));
+
+                assertThrows(IllegalArgumentException.class, () -> comicService.uploadChapterPages(5L, 1, null));
+        }
+
+        @Test
+        void uploadChapterPages_shouldRejectNullOriginalFilename() {
+                when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
+                when(chapterRepository.findById(5L)).thenReturn(Optional.of(Chapter.builder().id(5L).comicId(1L).build()));
+
+                MultipartFile file = mock(MultipartFile.class);
+                when(file.isEmpty()).thenReturn(false);
+                when(file.getSize()).thenReturn(10L);
+                when(file.getOriginalFilename()).thenReturn(null);
+                when(file.getContentType()).thenReturn("image/png");
+
+                assertThrows(IllegalArgumentException.class, () -> comicService.uploadChapterPages(5L, 1, List.of(file)));
+        }
+
+        @Test
+        void uploadChapterPages_shouldThrowWhenChapterMissing() {
+                when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
+                when(chapterRepository.findById(999L)).thenReturn(Optional.empty());
+
+                MockMultipartFile valid = new MockMultipartFile("files", "a.png", "image/png", "ok".getBytes());
+                assertThrows(NotFoundException.class, () -> comicService.uploadChapterPages(999L, 1, List.of(valid)));
+        }
+
+        @Test
+        void deleteChapterPage_shouldThrowWhenPageMissing() {
+                when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
+                when(chapterPageRepository.findById(999L)).thenReturn(Optional.empty());
+
+                assertThrows(NotFoundException.class, () -> comicService.deleteChapterPage(999L));
+        }
+
+        @Test
         void createComic_shouldTrimBlankOptionalFieldsToNull() {
                 when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
                 when(comicRepository.save(any(Comic.class))).thenAnswer(invocation -> {

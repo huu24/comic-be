@@ -109,6 +109,13 @@ class EmailOtpServiceTest {
     }
 
     @Test
+    void verifyOtp_shouldRejectWhenRecordMissing() {
+        when(emailVerificationOtpRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+
+        assertThrows(UnauthenticatedException.class, () -> emailOtpService.verifyOtp("missing@example.com", "123456"));
+    }
+
+    @Test
     void issueOtp_shouldTranslateMailFailure() {
         when(emailVerificationOtpRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
         when(emailVerificationOtpRepository.save(any(EmailVerificationOtp.class))).thenAnswer(invocation -> invocation.getArgument(0));

@@ -57,4 +57,27 @@ class OAuth2LoginSuccessHandlerTest {
         assertTrue(response.getHeader("Set-Cookie").contains("COMIC_AUTH=jwt-token"));
         assertEquals("http://localhost:3000/oauth2/success", response.getRedirectedUrl());
     }
+
+    @Test
+    void onAuthenticationSuccess_shouldHandleMissingOptionalClaims() throws Exception {
+        OAuth2User oauth2User = new DefaultOAuth2User(
+            java.util.List.of(new SimpleGrantedAuthority("ROLE_USER")),
+            Map.of("email", "google@example.com"),
+            "email"
+        );
+        Authentication authentication = Mockito.mock(Authentication.class);
+        when(authentication.getPrincipal()).thenReturn(oauth2User);
+        when(authService.authenticateGoogleUser("google@example.com", null, null))
+            .thenReturn(AuthResponse.builder().token("jwt-token-2").build());
+        when(authCookieService.buildTokenCookie("jwt-token-2")).thenReturn("COMIC_AUTH=jwt-token-2; Path=/; HttpOnly");
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        successHandler.onAuthenticationSuccess(request, response, authentication);
+
+        verify(authService).authenticateGoogleUser(eq("google@example.com"), eq(null), eq(null));
+        assertTrue(response.getHeader("Set-Cookie").contains("COMIC_AUTH=jwt-token-2"));
+        assertEquals("http://localhost:3000/oauth2/success", response.getRedirectedUrl());
+    }
 }

@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -299,5 +300,22 @@ class PageServiceTest {
 
                 assertNull(first.getBubbles());
                 assertNull(second.getBubbles());
+        }
+
+        @Test
+        void mergeBubbles_shouldHandleMatchingIdButNonObjectOriginalNode() throws Exception {
+                ArrayNode original = objectMapper.createArrayNode();
+                JsonNode fakeIdNode = mock(JsonNode.class);
+                when(fakeIdNode.asInt(-1)).thenReturn(7);
+                JsonNode fakeNode = mock(JsonNode.class);
+                doReturn(fakeIdNode).when(fakeNode).path("id");
+                when(fakeNode.isObject()).thenReturn(false);
+                original.add(fakeNode);
+
+                JsonNode translation = objectMapper.readTree("[{\"id\":7,\"full_translation\":\"Seven\"}]");
+
+                pageService.mergeBubbles(original, translation);
+
+                verify(fakeNode).isObject();
         }
 }

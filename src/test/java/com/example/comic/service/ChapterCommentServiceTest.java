@@ -179,4 +179,29 @@ class ChapterCommentServiceTest {
 
         assertEquals(20, response.getPageSize());
     }
+
+    @Test
+    void create_shouldAllowReplyWhenParentExists() {
+        User current = User.builder().id(1L).email("user@example.com").fullName("User").build();
+        Chapter chapter = Chapter.builder().id(10L).comicId(1L).build();
+        ChapterComment parent = ChapterComment.builder().id(200L).chapterId(10L).userId(2L).content("Parent").build();
+
+        when(currentUserService.requireUser()).thenReturn(current);
+        when(chapterRepository.findById(10L)).thenReturn(Optional.of(chapter));
+        when(chapterCommentRepository.findById(200L)).thenReturn(Optional.of(parent));
+        when(profanityFilterService.sanitize("reply text")).thenReturn("reply text");
+        when(chapterCommentRepository.save(any(ChapterComment.class))).thenAnswer(invocation -> {
+            ChapterComment comment = invocation.getArgument(0);
+            comment.setId(600L);
+            return comment;
+        });
+
+        ChapterCommentResponse response = chapterCommentService.create(
+            10L,
+            ChapterCommentCreateRequest.builder().content(" reply text ").parentId(200L).build()
+        );
+
+        assertEquals(600L, response.getId());
+        assertEquals(200L, response.getParentId());
+    }
 }

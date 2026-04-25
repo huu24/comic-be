@@ -1,8 +1,10 @@
 package com.example.comic.security;
 
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -62,5 +64,16 @@ class AuthCookieServiceTest {
 
         assertNull(authCookieService.resolveToken(requestWithBlank));
         assertNull(authCookieService.resolveToken(requestWithoutCookies));
+    }
+
+    @Test
+    void resolveToken_shouldReturnNullForMatchingCookieWithNullValue() {
+        Cookie cookie = Mockito.mock(Cookie.class);
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        Mockito.when(cookie.getName()).thenReturn("COMIC_AUTH");
+        Mockito.when(cookie.getValue()).thenReturn(null);
+        Mockito.when(request.getCookies()).thenReturn(new Cookie[] { cookie });
+
+        assertNull(authCookieService.resolveToken(request));
     }
 }

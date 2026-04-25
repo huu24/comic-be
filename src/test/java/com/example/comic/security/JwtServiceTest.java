@@ -55,4 +55,22 @@ class JwtServiceTest {
         assertTrue(jwtService.isTokenValid(token, user));
         assertFalse(jwtService.isTokenValid(token, anotherUser));
     }
+
+    @Test
+    void isTokenValid_shouldReturnFalseForExpiredToken() {
+        JwtService controllableJwtService = new JwtService() {
+            @Override
+            public String extractUsername(String token) {
+                return "user@example.com";
+            }
+
+            @Override
+            public Date extractExpiration(String token) {
+                return new Date(System.currentTimeMillis() - 1_000);
+            }
+        };
+        UserDetails user = User.withUsername("user@example.com").password("pwd").authorities("ROLE_MEMBER").build();
+
+        assertFalse(controllableJwtService.isTokenValid("expired", user));
+    }
 }
