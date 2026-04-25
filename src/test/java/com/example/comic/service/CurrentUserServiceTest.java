@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,7 +24,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class CurrentUserServiceTest {
@@ -90,6 +95,75 @@ class CurrentUserServiceTest {
 
     @Test
     void resolveRole_shouldReturnGuestWhenNotAuthenticated() {
+        assertEquals(UserRole.GUEST, currentUserService.resolveRole());
+    }
+
+    @Test
+    void requireUser_shouldThrowWhenAuthenticationMissingNameOrNotAuthenticatedOrUserMissing() {
+        SecurityContextHolder.getContext().setAuthentication(
+            new TestingAuthenticationToken(null, null)
+        );
+        SecurityContextHolder.getContext().getAuthentication().setAuthenticated(true);
+        assertThrows(UnauthenticatedException.class, () -> currentUserService.requireUser());
+
+        SecurityContextHolder.getContext().setAuthentication(
+            new TestingAuthenticationToken("member@comic.local", "pwd")
+        );
+        assertThrows(UnauthenticatedException.class, () -> currentUserService.requireUser());
+
+        SecurityContextHolder.getContext().setAuthentication(
+            new TestingAuthenticationToken("member@comic.local", "pwd")
+        );
+        SecurityContextHolder.getContext().getAuthentication().setAuthenticated(true);
+        when(userRepository.findByEmail("member@comic.local")).thenReturn(Optional.empty());
+        assertThrows(UnauthenticatedException.class, () -> currentUserService.requireUser());
+    }
+
+    @Test
+    void resolveRole_shouldReturnResolvedRoleOrGuestForInvalidAuthentication() {
+        SecurityContextHolder.getContext().setAuthentication(
+            new TestingAuthenticationToken("member@comic.local", "pwd", "ROLE_MEMBER")
+        );
+        when(userRepository.findByEmail("member@comic.local")).thenReturn(Optional.of(user(2L, "member@comic.local", UserRole.MEMBER, UserStatus.ACTIVE)));
+        assertEquals(UserRole.MEMBER, currentUserService.resolveRole());
+
+        when(userRepository.findByEmail("member@comic.local")).thenReturn(Optional.empty());
+        assertEquals(UserRole.GUEST, currentUserService.resolveRole());
+
+        SecurityContextHolder.getContext().setAuthentication(new TestingAuthenticationToken(null, null));
+        SecurityContextHolder.getContext().getAuthentication().setAuthenticated(true);
+        assertEquals(UserRole.GUEST, currentUserService.resolveRole());
+
+        SecurityContextHolder.getContext().setAuthentication(
+            new AnonymousAuthenticationToken("key", "anonymousUser", List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS")))
+        );
+        assertEquals(UserRole.GUEST, currentUserService.resolveRole());
+        verify(userRepository, never()).findByEmail("anonymousUser");
+    }
+
+    @Test
+    void requireUser_shouldThrowWhenAuthenticationIsNullOrNameIsNull() {
+        SecurityContextHolder.clearContext();
+        assertThrows(UnauthenticatedException.class, () -> currentUserService.requireUser());
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.isAuthenticated()).thenReturn(true);
+        when(auth.getName()).thenReturn(null);
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        assertThrows(UnauthenticatedException.class, () -> currentUserService.requireUser());
+    }
+
+    @Test
+    void resolveRole_shouldReturnGuestWhenNotAuthenticatedOrNameNull() {
+        Authentication notAuthenticated = mock(Authentication.class);
+        when(notAuthenticated.isAuthenticated()).thenReturn(false);
+        SecurityContextHolder.getContext().setAuthentication(notAuthenticated);
+        assertEquals(UserRole.GUEST, currentUserService.resolveRole());
+
+        Authentication nullName = mock(Authentication.class);
+        when(nullName.isAuthenticated()).thenReturn(true);
+        when(nullName.getName()).thenReturn(null);
+        SecurityContextHolder.getContext().setAuthentication(nullName);
         assertEquals(UserRole.GUEST, currentUserService.resolveRole());
     }
 

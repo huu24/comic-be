@@ -18,6 +18,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -114,5 +115,29 @@ class EmailOtpServiceTest {
         doThrow(new RuntimeException("mail down")).when(mailSender).send(any(SimpleMailMessage.class));
 
         assertThrows(IllegalStateException.class, () -> emailOtpService.issueOtp("test@example.com", "Test User"));
+    }
+
+    @Test
+    void issueOtp_shouldUseDefaultDisplayNameWhenFullNameBlank() {
+        when(emailVerificationOtpRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
+        when(emailVerificationOtpRepository.save(any(EmailVerificationOtp.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        emailOtpService.issueOtp("test@example.com", "   ");
+
+        ArgumentCaptor<SimpleMailMessage> mailCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender).send(mailCaptor.capture());
+        assertTrue(mailCaptor.getValue().getText().contains("Xin chào bạn"));
+    }
+
+    @Test
+    void issueOtp_shouldUseDefaultDisplayNameWhenFullNameNull() {
+        when(emailVerificationOtpRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
+        when(emailVerificationOtpRepository.save(any(EmailVerificationOtp.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        emailOtpService.issueOtp("test@example.com", null);
+
+        ArgumentCaptor<SimpleMailMessage> mailCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender).send(mailCaptor.capture());
+        assertTrue(mailCaptor.getValue().getText().contains("Xin chào bạn"));
     }
 }

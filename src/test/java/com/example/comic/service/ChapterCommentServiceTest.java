@@ -152,4 +152,31 @@ class ChapterCommentServiceTest {
             )
         );
     }
+
+    @Test
+    void getComments_shouldHandleNoParentComments() {
+        Chapter chapter = Chapter.builder().id(10L).comicId(1L).chapterNumber(1).build();
+        when(chapterRepository.findById(10L)).thenReturn(Optional.of(chapter));
+        when(chapterCommentRepository.findByChapterIdAndParentIdIsNullOrderByCreatedAtDesc(eq(10L), any()))
+            .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+        when(userRepository.findAllById(any())).thenReturn(List.of());
+
+        PageDataResponse<ChapterCommentResponse> response = chapterCommentService.getComments(10L, 0, 20);
+
+        assertEquals(0, response.getContent().size());
+        verify(chapterCommentRepository, org.mockito.Mockito.never()).findByParentIdInOrderByCreatedAtAsc(any());
+    }
+
+    @Test
+    void getComments_shouldUseDefaultSizeWhenSizeIsNonPositive() {
+        Chapter chapter = Chapter.builder().id(10L).comicId(1L).chapterNumber(1).build();
+        when(chapterRepository.findById(10L)).thenReturn(Optional.of(chapter));
+        when(chapterCommentRepository.findByChapterIdAndParentIdIsNullOrderByCreatedAtDesc(eq(10L), any()))
+            .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+        when(userRepository.findAllById(any())).thenReturn(List.of());
+
+        PageDataResponse<ChapterCommentResponse> response = chapterCommentService.getComments(10L, 0, 0);
+
+        assertEquals(20, response.getPageSize());
+    }
 }

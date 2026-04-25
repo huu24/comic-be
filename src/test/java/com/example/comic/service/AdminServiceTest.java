@@ -202,6 +202,66 @@ class AdminServiceTest {
         assertEquals("Comic A", response.getTopComics().get(0).getTitle());
     }
 
+    @Test
+    void getDashboardSummary_shouldDefaultNullTopComicRatingAndTotal() {
+        User admin = user(1L, "admin@comic.local", UserRole.ADMIN, UserStatus.ACTIVE);
+        when(currentUserService.requireAdmin()).thenReturn(admin);
+        when(comicRepository.findTop5ByOrderByTotalRatingsDescUpdatedAtDesc())
+            .thenReturn(List.of(Comic.builder().id(11L).title("Comic B").averageRating(null).totalRatings(null).build()));
+        when(userRepository.count()).thenReturn(1L);
+        when(userRepository.countByStatus(UserStatus.ACTIVE)).thenReturn(1L);
+        when(userRepository.countByStatus(UserStatus.LOCKED)).thenReturn(0L);
+        when(comicRepository.count()).thenReturn(1L);
+        when(chapterRepository.count()).thenReturn(1L);
+        when(chapterPageRepository.count()).thenReturn(1L);
+        when(comicRatingRepository.count()).thenReturn(1L);
+        when(readingHistoryRepository.count()).thenReturn(1L);
+
+        AdminDashboardSummaryResponse response = adminService.getDashboardSummary();
+
+        assertEquals(0D, response.getTopComics().get(0).getAverageRating());
+        assertEquals(0, response.getTopComics().get(0).getTotalRatings());
+    }
+
+    @Test
+    void getUsers_shouldUseDefaultSizeAndNullKeyword() {
+        User admin = user(1L, "admin@comic.local", UserRole.ADMIN, UserStatus.ACTIVE);
+        when(currentUserService.requireAdmin()).thenReturn(admin);
+        when(userRepository.searchByKeyword(eq(null), any()))
+            .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+        PageDataResponse<AdminUserSummaryResponse> response = adminService.getUsers(null, -2, 0);
+
+        assertEquals(20, response.getPageSize());
+        assertEquals(0, response.getContent().size());
+    }
+
+    @Test
+    void updateUserStatus_shouldAcceptActiveAndNullStatusRoleInSummary() {
+        User admin = user(1L, "admin@comic.local", UserRole.ADMIN, UserStatus.ACTIVE);
+        User target = user(2L, "member@comic.local", UserRole.MEMBER, UserStatus.LOCKED);
+        target.setRole(null);
+        target.setStatus(null);
+        when(currentUserService.requireAdmin()).thenReturn(admin);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(target));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AdminUserSummaryResponse response = adminService.updateUserStatus(2L, "ACTIVE");
+
+        assertNull(response.getRole());
+        assertEquals("ACTIVE", response.getStatus());
+    }
+
+    @Test
+    void updateUserStatus_shouldRejectNullStatus() {
+        User admin = user(1L, "admin@comic.local", UserRole.ADMIN, UserStatus.ACTIVE);
+        User target = user(2L, "member@comic.local", UserRole.MEMBER, UserStatus.ACTIVE);
+        when(currentUserService.requireAdmin()).thenReturn(admin);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(target));
+
+        assertThrows(IllegalArgumentException.class, () -> adminService.updateUserStatus(2L, null));
+    }
+
     private static User user(Long id, String email, UserRole role, UserStatus status) {
         return User
             .builder()

@@ -134,6 +134,20 @@ class LibraryServiceTest {
         );
     }
 
+    @Test
+    void getLibraries_shouldUseDefaultPageSizeWhenSizeIsNonPositive() {
+        User user = user(1L);
+        when(currentUserService.requireUser()).thenReturn(user);
+        when(userLibraryRepository.findByUserIdAndListType(1L, LibraryListType.READING, PageRequest.of(0, 20)))
+            .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+        when(comicRepository.findAllById(any())).thenReturn(List.of());
+
+        PageDataResponse<UserLibraryItemResponse> response = libraryService.getLibraries(LibraryListType.READING, -3, 0);
+
+        assertEquals(20, response.getPageSize());
+        assertEquals(0, response.getContent().size());
+    }
+
     private static User user(Long id) {
         return User.builder().id(id).email("user@example.com").passwordHash("hash").fullName("User").build();
     }

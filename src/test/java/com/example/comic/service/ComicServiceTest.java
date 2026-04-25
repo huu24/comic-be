@@ -21,6 +21,7 @@ import com.example.comic.repository.ComicRatingRepository;
 import com.example.comic.repository.ComicRepository;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -41,6 +42,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 
 class ComicServiceTest {
 
@@ -286,6 +288,180 @@ class ComicServiceTest {
 
         assertThrows(NotFoundException.class, () -> comicService.rateComic(11L, 5));
     }
+
+        @Test
+        void createComic_shouldHandleNullOptionalFields() {
+                when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
+                when(comicRepository.save(any(Comic.class))).thenAnswer(invocation -> {
+                        Comic comic = invocation.getArgument(0);
+                        comic.setId(12L);
+                        return comic;
+                });
+
+                ComicCreateResponse response = comicService.createComic(
+                        ComicCreateRequest.builder()
+                                .title(" Title ")
+                                .description(null)
+                                .author(null)
+                                .coverImageUrl(null)
+                                .originalLanguage(null)
+                                .format(" WEBTOON ")
+                                .status(null)
+                                .build()
+                );
+
+                assertEquals(12L, response.getId());
+                assertEquals("Title", response.getTitle());
+                assertEquals("WEBTOON", response.getFormat());
+                assertEquals(null, response.getDescription());
+        }
+
+        @Test
+        void getComics_shouldHandleNullAndBlankFiltersAndMaxSize() {
+                when(comicRepository.search(eq(null), eq(null), eq(null), eq(null), any()))
+                        .thenReturn(new PageImpl<>(List.of(), PageRequest.of(1, 100), 0));
+
+                PageDataResponse<ComicSummaryResponse> response = comicService.getComics("   ", null, null, "   ", 1, 999);
+
+                assertEquals(1, response.getPageNo());
+                assertEquals(100, response.getPageSize());
+                verify(comicRepository).search(eq(null), eq(null), eq(null), eq(null), any());
+        }
+
+        @Test
+        void getComics_shouldKeepAverageRatingWhenNonNull() {
+                when(comicRepository.search(eq("Bleach"), eq(null), eq(null), eq(null), any()))
+                        .thenReturn(new PageImpl<>(
+                                List.of(Comic.builder().id(2L).title("Bleach").averageRating(4.2).format("MANGA").status("ACTIVE").build()),
+                                PageRequest.of(0, 20),
+                                1
+                        ));
+
+                PageDataResponse<ComicSummaryResponse> response = comicService.getComics("Bleach", null, null, null, 0, 20);
+
+                assertEquals(4.2, response.getContent().get(0).getAverageRating());
+        }
+
+        @Test
+        void uploadChapterPages_shouldValidateNullEmptySizeNameAndContentType() {
+                when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
+                when(chapterRepository.findById(5L)).thenReturn(Optional.of(Chapter.builder().id(5L).comicId(1L).build()));
+
+                List<org.springframework.web.multipart.MultipartFile> filesWithNull = new ArrayList<>();
+                filesWithNull.add(null);
+                assertThrows(IllegalArgumentException.class, () -> comicService.uploadChapterPages(5L, 1, filesWithNull));
+
+                MockMultipartFile empty = new MockMultipartFile("files", "a.png", "image/png", new byte[0]);
+                assertThrows(IllegalArgumentException.class, () -> comicService.uploadChapterPages(5L, 1, List.of(empty)));
+
+                byte[] big = new byte[5 * 1024 * 1024 + 1];
+                MockMultipartFile oversized = new MockMultipartFile("files", "a.png", "image/png", big);
+                assertThrows(IllegalArgumentException.class, () -> comicService.uploadChapterPages(5L, 1, List.of(oversized)));
+
+                MockMultipartFile noExtension = new MockMultipartFile("files", "a", "image/png", "x".getBytes());
+                assertThrows(IllegalArgumentException.class, () -> comicService.uploadChapterPages(5L, 1, List.of(noExtension)));
+
+                MockMultipartFile trailingDot = new MockMultipartFile("files", "a.", "image/png", "x".getBytes());
+                assertThrows(IllegalArgumentException.class, () -> comicService.uploadChapterPages(5L, 1, List.of(trailingDot)));
+
+                MockMultipartFile nullType = new MockMultipartFile("files", "a.png", null, "x".getBytes());
+                assertThrows(IllegalArgumentException.class, () -> comicService.uploadChapterPages(5L, 1, List.of(nullType)));
+        }
+
+        @Test
+        void uploadChapterPages_shouldAcceptUppercaseExtensionAndDefaultStartPage() {
+                when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
+                when(chapterRepository.findById(5L)).thenReturn(Optional.of(Chapter.builder().id(5L).comicId(1L).build()));
+                when(chapterPageRepository.existsByChapterIdAndPageNumberBetween(5L, 1, 1)).thenReturn(false);
+                when(minioStorageService.uploadComicPage(eq(5L), eq(1), any())).thenReturn("pages/1.webp");
+                when(chapterPageRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+                when(minioStorageService.resolvePublicUrl(any())).thenAnswer(invocation -> "public:" + invocation.getArgument(0));
+
+                List<ChapterPageResponse> responses = comicService.uploadChapterPages(
+                        5L,
+                        -10,
+                        List.of(new MockMultipartFile("files", "PIC.WEBP", "image/webp", "ok".getBytes()))
+                );
+
+                assertEquals(1, responses.size());
+                assertEquals("public:pages/1.webp", responses.get(0).getImageUrl());
+        }
+
+        @Test
+        void uploadChapterPages_shouldRejectDuplicatePageRange() {
+                when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
+                when(chapterRepository.findById(5L)).thenReturn(Optional.of(Chapter.builder().id(5L).comicId(1L).build()));
+                when(chapterPageRepository.existsByChapterIdAndPageNumberBetween(5L, 10, 10)).thenReturn(true);
+
+                MockMultipartFile valid = new MockMultipartFile("files", "a.png", "image/png", "ok".getBytes());
+                assertThrows(AlreadyExistsException.class, () -> comicService.uploadChapterPages(5L, 10, List.of(valid)));
+        }
+
+        @Test
+        void uploadChapterPages_shouldRejectBlankFilename() {
+                when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
+                when(chapterRepository.findById(5L)).thenReturn(Optional.of(Chapter.builder().id(5L).comicId(1L).build()));
+
+                MultipartFile file = mock(MultipartFile.class);
+                when(file.isEmpty()).thenReturn(false);
+                when(file.getSize()).thenReturn(10L);
+                when(file.getOriginalFilename()).thenReturn("   ");
+                when(file.getContentType()).thenReturn("image/png");
+
+                assertThrows(IllegalArgumentException.class, () -> comicService.uploadChapterPages(5L, 1, List.of(file)));
+        }
+
+        @Test
+        void createComic_shouldTrimBlankOptionalFieldsToNull() {
+                when(currentUserService.requireAdmin()).thenReturn(user(1L, "admin@example.com"));
+                when(comicRepository.save(any(Comic.class))).thenAnswer(invocation -> {
+                        Comic comic = invocation.getArgument(0);
+                        comic.setId(13L);
+                        return comic;
+                });
+
+                ComicCreateResponse response = comicService.createComic(
+                        ComicCreateRequest.builder()
+                                .title(" Title ")
+                                .description("   ")
+                                .author("   ")
+                                .coverImageUrl("   ")
+                                .originalLanguage("   ")
+                                .format(" MANGA ")
+                                .status("   ")
+                                .build()
+                );
+
+                assertEquals(null, response.getDescription());
+                assertEquals(null, response.getAuthor());
+                assertEquals(null, response.getCoverImageUrl());
+                assertEquals(null, response.getOriginalLanguage());
+                assertEquals(null, response.getStatus());
+        }
+
+        @Test
+        void rateComic_shouldCreateNewRatingWhenMissing() {
+                User current = user(3L, "user@example.com");
+                when(currentUserService.requireUser()).thenReturn(current);
+                when(comicRepository.findById(11L)).thenReturn(
+                        Optional.of(Comic.builder().id(11L).title("Comic").format("MANGA").status("ACTIVE").build())
+                );
+                when(comicRatingRepository.findByUserIdAndComicId(3L, 11L)).thenReturn(Optional.empty());
+                when(comicRatingRepository.avgScoreByComicId(11L)).thenReturn(5.0);
+                when(comicRatingRepository.countByComicId(11L)).thenReturn(1L);
+                when(comicRepository.save(any(Comic.class))).thenAnswer(invocation -> invocation.getArgument(0));
+                when(comicRatingRepository.save(any(ComicRating.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+                ComicRatingResponse response = comicService.rateComic(11L, 5);
+
+                assertEquals(5.0, response.getNewAverageRating());
+                assertEquals(1L, response.getTotalRatings());
+
+                ArgumentCaptor<ComicRating> ratingCaptor = ArgumentCaptor.forClass(ComicRating.class);
+                verify(comicRatingRepository).save(ratingCaptor.capture());
+                assertEquals(3L, ratingCaptor.getValue().getUserId());
+                assertEquals(11L, ratingCaptor.getValue().getComicId());
+        }
 
     private static User user(Long id, String email) {
         return User.builder().id(id).email(email).passwordHash("hash").fullName("User").build();
