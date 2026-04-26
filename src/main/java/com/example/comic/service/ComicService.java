@@ -2,7 +2,6 @@ package com.example.comic.service;
 
 import com.example.comic.exception.AlreadyExistsException;
 import com.example.comic.exception.NotFoundException;
-import com.example.comic.model.Category;
 import com.example.comic.model.Chapter;
 import com.example.comic.model.ChapterPage;
 import com.example.comic.model.Comic;
@@ -18,7 +17,6 @@ import com.example.comic.model.dto.ComicDetailResponse;
 import com.example.comic.model.dto.ComicRatingResponse;
 import com.example.comic.model.dto.ComicSummaryResponse;
 import com.example.comic.model.dto.PageDataResponse;
-import com.example.comic.repository.CategoryRepository;
 import com.example.comic.repository.ChapterPageRepository;
 import com.example.comic.repository.ChapterRepository;
 import com.example.comic.repository.ComicCategoryRepository;
@@ -51,7 +49,6 @@ public class ComicService {
     private final ChapterPageRepository chapterPageRepository;
     private final ComicRatingRepository comicRatingRepository;
     private final ComicCategoryRepository comicCategoryRepository;
-    private final CategoryRepository categoryRepository;
     private final CurrentUserService currentUserService;
     private final MinioStorageService minioStorageService;
 
