@@ -158,10 +158,7 @@ public class ComicService {
         Comic comic = comicRepository.findById(comicId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
 
-        List<String> categoryNames = comicCategoryRepository.findByComicId(comicId).stream()
-                .map(cc -> categoryRepository.findById(cc.getCategoryId()).map(Category::getName).orElse(null))
-                .filter(name -> name != null)
-                .toList();
+        List<String> categoryNames = comicCategoryRepository.findCategoryNamesByComicId(comicId);
 
         return ComicDetailResponse.builder()
                 .id(comic.getId())
