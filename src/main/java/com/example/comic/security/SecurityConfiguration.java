@@ -23,31 +23,43 @@ public class SecurityConfiguration {
     private static final String ADMIN_ROLE = UserRole.ADMIN.name();
 
     private static final String[] PUBLIC_ENDPOINTS = {
-        "/auth/me",
-        "/auth/register",
-        "/auth/register-otp",
-        "/auth/login",
-        "/auth/verify-email-otp",
-        "/auth/resend-email-otp",
-        "/oauth2/**",
-        "/login/oauth2/**"
+            "/auth/me",
+            "/auth/register",
+            "/auth/register-otp",
+            "/auth/login",
+            "/auth/verify-email-otp",
+            "/auth/resend-email-otp",
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/oauth2/**",
+            "/login/oauth2/**"
     };
 
     private static final String[] PUBLIC_GET_ENDPOINTS = {
-        "/comics",
-        "/chapters/*/pages",
-        "/chapters/*/comments"
+            "/comics",
+            "/comics/*",
+            "/comics/*/chapters",
+            "/chapters/*/pages",
+            "/chapters/*/comments",
+            "/categories"
     };
 
     private static final String[] ADMIN_POST_ENDPOINTS = {
-        "/comics",
-        "/comics/*/chapters",
-        "/chapters/*/pages"
+            "/comics",
+            "/comics/*/chapters",
+            "/chapters/*/pages",
+            "/categories"
+    };
+
+    private static final String[] ADMIN_PUT_ENDPOINTS = {
+            "/categories/*"
     };
 
     private static final String[] ADMIN_DELETE_ENDPOINTS = {
-        "/chapters/*/pages",
-        "/chapters/pages/*"
+            "/chapters/*/pages",
+            "/chapters/pages/*",
+            "/categories/*"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -60,61 +72,55 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-            .authorizeHttpRequests(auth -> {
-                permitAll(auth, PUBLIC_ENDPOINTS);
-                permitAll(auth, HttpMethod.GET, PUBLIC_GET_ENDPOINTS);
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .authorizeHttpRequests(auth -> {
+                    permitAll(auth, PUBLIC_ENDPOINTS);
+                    permitAll(auth, HttpMethod.GET, PUBLIC_GET_ENDPOINTS);
 
-                hasRole(auth, ADMIN_ROLE, "/admin/**");
-                hasRole(auth, HttpMethod.POST, ADMIN_ROLE, ADMIN_POST_ENDPOINTS);
-                hasRole(auth, HttpMethod.DELETE, ADMIN_ROLE, ADMIN_DELETE_ENDPOINTS);
+                    hasRole(auth, ADMIN_ROLE, "/admin/**");
+                    hasRole(auth, HttpMethod.POST, ADMIN_ROLE, ADMIN_POST_ENDPOINTS);
+                    hasRole(auth, HttpMethod.PUT, ADMIN_ROLE, ADMIN_PUT_ENDPOINTS);
+                    hasRole(auth, HttpMethod.DELETE, ADMIN_ROLE, ADMIN_DELETE_ENDPOINTS);
 
-                auth.anyRequest().authenticated();
-            })
-            .authenticationProvider(authenticationProvider)
-            .exceptionHandling(ex ->
-                ex.authenticationEntryPoint(authenticationEntryPoint).accessDeniedHandler(accessDeniedHandler)
-            )
-            .oauth2Login(oauth2 ->
-                oauth2
-                    .successHandler(oAuth2LoginSuccessHandler)
-                    .failureHandler(oAuth2LoginFailureHandler)
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                    auth.anyRequest().authenticated();
+                })
+                .authenticationProvider(authenticationProvider)
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler(oAuth2LoginFailureHandler))
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     private static void permitAll(
-        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth,
-        String... patterns
-    ) {
+            AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth,
+            String... patterns) {
         auth.requestMatchers(patterns).permitAll();
     }
 
     private static void permitAll(
-        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth,
-        HttpMethod method,
-        String... patterns
-    ) {
+            AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth,
+            HttpMethod method,
+            String... patterns) {
         auth.requestMatchers(method, patterns).permitAll();
     }
 
     private static void hasRole(
-        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth,
-        String role,
-        String... patterns
-    ) {
+            AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth,
+            String role,
+            String... patterns) {
         auth.requestMatchers(patterns).hasRole(role);
     }
 
     private static void hasRole(
-        AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth,
-        HttpMethod method,
-        String role,
-        String... patterns
-    ) {
+            AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth,
+            HttpMethod method,
+            String role,
+            String... patterns) {
         auth.requestMatchers(method, patterns).hasRole(role);
     }
 }

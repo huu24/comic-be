@@ -2,6 +2,7 @@ package com.example.comic.service;
 
 import com.example.comic.exception.AlreadyExistsException;
 import com.example.comic.exception.NotFoundException;
+import com.example.comic.model.Category;
 import com.example.comic.model.Chapter;
 import com.example.comic.model.ChapterPage;
 import com.example.comic.model.Comic;
@@ -10,13 +11,17 @@ import com.example.comic.model.User;
 import com.example.comic.model.dto.ChapterCreateRequest;
 import com.example.comic.model.dto.ChapterCreateResponse;
 import com.example.comic.model.dto.ChapterPageResponse;
+import com.example.comic.model.dto.ChapterSummaryResponse;
 import com.example.comic.model.dto.ComicCreateRequest;
 import com.example.comic.model.dto.ComicCreateResponse;
+import com.example.comic.model.dto.ComicDetailResponse;
 import com.example.comic.model.dto.ComicRatingResponse;
 import com.example.comic.model.dto.ComicSummaryResponse;
 import com.example.comic.model.dto.PageDataResponse;
+import com.example.comic.repository.CategoryRepository;
 import com.example.comic.repository.ChapterPageRepository;
 import com.example.comic.repository.ChapterRepository;
+import com.example.comic.repository.ComicCategoryRepository;
 import com.example.comic.repository.ComicRatingRepository;
 import com.example.comic.repository.ComicRepository;
 
@@ -45,6 +50,8 @@ public class ComicService {
     private final ChapterRepository chapterRepository;
     private final ChapterPageRepository chapterPageRepository;
     private final ComicRatingRepository comicRatingRepository;
+    private final ComicCategoryRepository comicCategoryRepository;
+    private final CategoryRepository categoryRepository;
     private final CurrentUserService currentUserService;
     private final MinioStorageService minioStorageService;
 
@@ -143,6 +150,60 @@ public class ComicService {
                 .totalElements(comics.getTotalElements())
                 .totalPages(comics.getTotalPages())
                 .last(comics.isLast())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public ComicDetailResponse getComicDetail(Long comicId) {
+        Comic comic = comicRepository.findById(comicId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
+
+        List<String> categoryNames = comicCategoryRepository.findByComicId(comicId).stream()
+                .map(cc -> categoryRepository.findById(cc.getCategoryId()).map(Category::getName).orElse(null))
+                .filter(name -> name != null)
+                .toList();
+
+        return ComicDetailResponse.builder()
+                .id(comic.getId())
+                .title(comic.getTitle())
+                .description(comic.getDescription())
+                .author(comic.getAuthor())
+                .coverImageUrl(comic.getCoverImageUrl())
+                .originalLanguage(comic.getOriginalLanguage())
+                .format(comic.getFormat())
+                .status(comic.getStatus())
+                .averageRating(comic.getAverageRating() == null ? 0D : comic.getAverageRating())
+                .totalRatings(comic.getTotalRatings() == null ? 0 : comic.getTotalRatings())
+                .createdAt(comic.getCreatedAt())
+                .updatedAt(comic.getUpdatedAt())
+                .categories(categoryNames)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public PageDataResponse<ChapterSummaryResponse> getChapters(Long comicId, int page, int size) {
+        comicRepository.findById(comicId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
+
+        Pageable pageable = PageRequest.of(normalizePage(page), normalizeSize(size));
+        Page<Chapter> chapters = chapterRepository.findByComicIdOrderByChapterNumberAsc(comicId, pageable);
+
+        List<ChapterSummaryResponse> content = chapters.getContent().stream()
+                .map(ch -> ChapterSummaryResponse.builder()
+                        .id(ch.getId())
+                        .chapterNumber(ch.getChapterNumber())
+                        .title(ch.getTitle())
+                        .createdAt(ch.getCreatedAt())
+                        .build())
+                .toList();
+
+        return PageDataResponse.<ChapterSummaryResponse>builder()
+                .content(content)
+                .pageNo(chapters.getNumber())
+                .pageSize(chapters.getSize())
+                .totalElements(chapters.getTotalElements())
+                .totalPages(chapters.getTotalPages())
+                .last(chapters.isLast())
                 .build();
     }
 
