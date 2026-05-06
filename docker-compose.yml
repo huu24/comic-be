@@ -12,3 +12,48 @@ services:
     volumes:
       - ./minio_data:/data
     command: server /data --console-address ":9001"
+
+  db:
+    image: postgres:15-alpine
+    container_name: comic_db
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-comic}"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-comic}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: comic_backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: "jdbc:postgresql://db:5432/${POSTGRES_DB:-comic}"
+      DB_USERNAME: "${POSTGRES_USER:-postgres}"
+      DB_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      MINIO_ENDPOINT: "http://minio:9000"
+      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY:-admin}"
+      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY:-password123}"
+      MINIO_BUCKET: "${MINIO_BUCKET:-comic}"
+      MINIO_PUBLIC_BASE_URL: "http://minio:9000/comic"
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY:-change-me-to-secure-value}"
+      OTP_EXPIRATION_SECONDS: "${OTP_EXPIRATION_SECONDS:-300}"
+      OTP_MAIL_FROM: "${OTP_MAIL_FROM:-no-reply@comic.local}"
+      MAIL_USERNAME: "${MAIL_USERNAME}"
+      MAIL_PASSWORD: "${MAIL_PASSWORD}"
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    restart: on-failure

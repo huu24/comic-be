@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class SecurityConfigurationTest {
 
+    private CorsProperties corsProperties;
     private JwtAuthenticationFilter jwtAuthenticationFilter;
     private AuthenticationProvider authenticationProvider;
     private RestAuthenticationEntryPoint authenticationEntryPoint;
@@ -34,6 +35,7 @@ class SecurityConfigurationTest {
 
     @BeforeEach
     void setUp() {
+        corsProperties = new CorsProperties();
         jwtAuthenticationFilter = mock(JwtAuthenticationFilter.class);
         authenticationProvider = mock(AuthenticationProvider.class);
         authenticationEntryPoint = mock(RestAuthenticationEntryPoint.class);
@@ -42,6 +44,7 @@ class SecurityConfigurationTest {
         oAuth2LoginFailureHandler = mock(OAuth2LoginFailureHandler.class);
 
         securityConfiguration = new SecurityConfiguration(
+            corsProperties,
             jwtAuthenticationFilter,
             authenticationProvider,
             authenticationEntryPoint,

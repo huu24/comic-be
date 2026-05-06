@@ -1,0 +1,14 @@
+# Ignore data volumes
+pgdata/
+minio_data/
+
+# Build outputs
+target/
+
+# VCS and IDE
+.git/
+.idea/
+.vscode/
+
+# OS
+.DS_Store

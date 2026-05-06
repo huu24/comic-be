@@ -15,7 +15,6 @@ import com.example.comic.model.dto.ComicCreateResponse;
 import com.example.comic.model.dto.ComicRatingResponse;
 import com.example.comic.model.dto.ComicSummaryResponse;
 import com.example.comic.model.dto.PageDataResponse;
-import com.example.comic.repository.CategoryRepository;
 import com.example.comic.repository.ChapterPageRepository;
 import com.example.comic.repository.ChapterRepository;
 import com.example.comic.repository.ComicCategoryRepository;
@@ -53,7 +52,6 @@ class ComicServiceTest {
         private ChapterPageRepository chapterPageRepository;
         private ComicRatingRepository comicRatingRepository;
         private ComicCategoryRepository comicCategoryRepository;
-        private CategoryRepository categoryRepository;
         private CurrentUserService currentUserService;
         private MinioStorageService minioStorageService;
         private ComicService comicService;
@@ -65,7 +63,6 @@ class ComicServiceTest {
                 chapterPageRepository = mock(ChapterPageRepository.class);
                 comicRatingRepository = mock(ComicRatingRepository.class);
                 comicCategoryRepository = mock(ComicCategoryRepository.class);
-                categoryRepository = mock(CategoryRepository.class);
                 currentUserService = mock(CurrentUserService.class);
                 minioStorageService = mock(MinioStorageService.class);
                 comicService = new ComicService(
@@ -74,7 +71,6 @@ class ComicServiceTest {
                                 chapterPageRepository,
                                 comicRatingRepository,
                                 comicCategoryRepository,
-                                categoryRepository,
                                 currentUserService,
                                 minioStorageService);
         }
