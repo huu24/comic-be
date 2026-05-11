@@ -56,9 +56,14 @@ public class LibraryService {
                 Comic comic = comicMap.get(item.getComicId());
                 return UserLibraryItemResponse
                     .builder()
-                    .comicId(item.getComicId())
+                    .id(comic == null ? item.getComicId() : comic.getId())
                     .title(comic == null ? null : comic.getTitle())
+                    .author(comic == null ? null : comic.getAuthor())
                     .coverImageUrl(comic == null ? null : comic.getCoverImageUrl())
+                    .originalLanguage(comic == null ? null : comic.getOriginalLanguage())
+                    .status(comic == null ? null : comic.getStatus())
+                    .format(comic == null ? null : comic.getFormat())
+                    .averageRating(comic == null || comic.getAverageRating() == null ? 0D : comic.getAverageRating())
                     .listType(item.getListType())
                         .savedAt(item.getCreatedAt())
                     .build();
