@@ -142,7 +142,6 @@ class SecurityAuthorizationIntegrationTest {
                 List.of(
                     UserLibraryItemResponse
                         .builder()
-                        .comicId(1L)
                         .title("Comic A")
                         .listType(LibraryListType.READING)
                         .savedAt(Instant.parse("2025-01-01T00:00:00Z"))

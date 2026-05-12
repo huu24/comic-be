@@ -25,8 +25,8 @@ INSERT INTO categories (name) VALUES
 -- =========================
 INSERT INTO public.comics (author,average_rating,cover_image_url,created_at,description,format,original_language,status,title,total_ratings,updated_at) VALUES
 	 ('Yuki Tanaka',4.2,'https://i.pinimg.com/1200x/32/ec/79/32ec798f31e28fd7d6c3c2775daf2114.jpg','2026-05-10 23:53:38.360188+07','A romantic story between two university students.','Manga','Japanese','ONGOING','Love in Tokyo',89,'2026-05-10 23:53:38.360188+07'),
-	 ('Kim Jiho',4.1,'https://i.pinimg.com/1200x/32/ec/79/32ec798f31e28fd7d6c3c2775daf2114.jpg','2026-05-10 23:53:38.360188+07','Daily life comedy with ridiculous situations.','Webtoon','Korean','ONGOING','Laugh Factory',60,'2026-05-10 23:53:38.360188+07'),
-	 ('John Carter',4.8,'https://i.pinimg.com/1200x/32/ec/79/32ec798f31e28fd7d6c3c2775daf2114.jpg','2026-05-10 23:53:38.360188+07','Elite soldiers protect the galaxy from alien invasions.','Comic','English','COMPLETED','Galaxy Warriors',250,'2026-05-10 23:53:38.360188+07'),
+	 ('Kim Jiho',4.1,'https://i.pinimg.com/1200x/aa/4b/cd/aa4bcd56244410d7a5e92bf80d5d5000.jpg','2026-05-10 23:53:38.360188+07','Daily life comedy with ridiculous situations.','Webtoon','Korean','ONGOING','Laugh Factory',60,'2026-05-10 23:53:38.360188+07'),
+	 ('John Carter',4.8,'https://i.pinimg.com/736x/f0/e5/e0/f0e5e0d4484e2259ce84827b1bf23ea5.jpg','2026-05-10 23:53:38.360188+07','Elite soldiers protect the galaxy from alien invasions.','Comic','English','COMPLETED','Galaxy Warriors',250,'2026-05-10 23:53:38.360188+07'),
 	 ('Akira Sato',4.5,'https://i.pinimg.com/736x/b2/03/fb/b203fb9eb0e37bf4dbb9167f7abe7204.jpg','2026-05-10 23:53:38.360188+07','A young warrior fights against dark creatures threatening humanity.','Manga','Japanese','ONGOING','Shadow Hunter',120,'2026-05-10 23:53:38.360188+07'),
 	 ('Hana Lee',4.6,'https://i.pinimg.com/736x/f7/56/11/f75611b7bbd4e7494b663bc2615895eb.jpg','2026-05-10 23:53:38.360188+07','Students learn forbidden magic in a secret academy.','Manhwa','Korean','ONGOING','Mystic Academy',170,'2026-05-10 23:53:38.360188+07');
 
