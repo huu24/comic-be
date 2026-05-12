@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CategoryCreateRequest {
 
+    @Schema(example = "Hành động")
     @NotBlank(message = "Tên danh mục là bắt buộc.")
     private String name;
 }
