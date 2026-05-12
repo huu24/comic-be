@@ -7,16 +7,7 @@ import com.example.comic.model.ChapterPage;
 import com.example.comic.model.Comic;
 import com.example.comic.model.ComicRating;
 import com.example.comic.model.User;
-import com.example.comic.model.dto.ChapterCreateRequest;
-import com.example.comic.model.dto.ChapterCreateResponse;
-import com.example.comic.model.dto.ChapterPageResponse;
-import com.example.comic.model.dto.ChapterSummaryResponse;
-import com.example.comic.model.dto.ComicCreateRequest;
-import com.example.comic.model.dto.ComicCreateResponse;
-import com.example.comic.model.dto.ComicDetailResponse;
-import com.example.comic.model.dto.ComicRatingResponse;
-import com.example.comic.model.dto.ComicSummaryResponse;
-import com.example.comic.model.dto.PageDataResponse;
+import com.example.comic.model.dto.*;
 import com.example.comic.repository.ChapterPageRepository;
 import com.example.comic.repository.ChapterRepository;
 import com.example.comic.repository.ComicCategoryRepository;
@@ -26,6 +17,8 @@ import com.example.comic.repository.ComicRepository;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -378,5 +371,29 @@ public class ComicService {
                 .cleanedImageUrl(minioStorageService.resolvePublicUrl(page.getCleanedImageUrl()))
                 .originalMetadataUrl(minioStorageService.resolvePublicUrl(page.getOriginalMetadataUrl()))
                 .build();
+    }
+
+    public BookOverviewDTO getBookOverview(Long comicId) {
+        Comic comic = comicRepository.findById(comicId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
+        List<Chapter> chapterList = chapterRepository.findByComicIdOrderByChapterNumberAsc(comicId);
+        return BookOverviewDTO.builder()
+                .id(comicId)
+                .title(comic.getTitle())
+                .coverImageUrl(comic.getCoverImageUrl())
+                .author(comic.getAuthor())
+                .description(comic.getDescription())
+                .averageRating(comic.getAverageRating())
+                .totalRatings(comic.getTotalRatings())
+                .chapters(chapterList.stream()
+                        .map(chapter -> ChapterSummaryResponse.builder()
+                                .title(chapter.getTitle())
+                                .id(chapter.getId())
+                                .chapterNumber(chapter.getChapterNumber())
+                                .createdAt(chapter.getCreatedAt())
+                                .build()
+                        ).collect(Collectors.toList()))
+                .build();
+
     }
 }

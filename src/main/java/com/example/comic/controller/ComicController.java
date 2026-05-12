@@ -1,17 +1,6 @@
 package com.example.comic.controller;
 
-import com.example.comic.model.dto.ChapterCreateRequest;
-import com.example.comic.model.dto.ChapterCreateResponse;
-import com.example.comic.model.dto.ChapterSummaryResponse;
-import com.example.comic.model.dto.ComicCreateRequest;
-import com.example.comic.model.dto.ComicCreateResponse;
-import com.example.comic.model.dto.ComicDetailResponse;
-import com.example.comic.model.dto.ComicRatingRequest;
-import com.example.comic.model.dto.ComicRatingResponse;
-import com.example.comic.model.dto.ComicSummaryResponse;
-import com.example.comic.model.dto.DataResponse;
-import com.example.comic.model.dto.PageDataResponse;
-import com.example.comic.model.dto.RateComicResponse;
+import com.example.comic.model.dto.*;
 import com.example.comic.service.ComicService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -82,6 +71,14 @@ public class ComicController {
                         .<PageDataResponse<ChapterSummaryResponse>>builder()
                         .data(comicService.getChapters(comicId, page, size))
                         .build());
+    }
+
+    @GetMapping("/{comicId}/book-overview")
+    public ResponseEntity<BookOverviewResponse> getBookOverview(@PathVariable Long comicId) {
+        return ResponseEntity.ok(
+                BookOverviewResponse.builder().message("Lấy overview sách thành công")
+                        .bookOverviewData(comicService.getBookOverview(comicId)).build()
+        );
     }
 
     @PutMapping("/{comicId}/ratings")
