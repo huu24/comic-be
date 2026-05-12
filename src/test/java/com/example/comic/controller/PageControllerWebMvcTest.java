@@ -35,7 +35,7 @@ class PageControllerWebMvcTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+        @MockBean
     private PageService pageService;
 
     @Test
