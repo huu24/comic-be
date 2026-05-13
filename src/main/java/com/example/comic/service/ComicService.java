@@ -396,4 +396,15 @@ public class ComicService {
                 .build();
 
     }
+
+    public ChapterOverviewResponse getChapterOverview(Long comicId, Integer chapterNumber) {
+        Comic comic = comicRepository.findById(comicId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
+        Chapter chapter = chapterRepository.findByComicIdAndChapterNumber(comicId, chapterNumber);
+        return ChapterOverviewResponse.builder()
+                .id(chapter.getId())
+                .title(chapter.getTitle())
+                .chapterNumber(chapterNumber)
+                .build();
+    }
 }

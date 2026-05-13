@@ -81,6 +81,18 @@ public class ComicController {
         );
     }
 
+    @GetMapping("/{comicId}/chapter/{chapterNumber}")
+    public ResponseEntity<DataResponse<ChapterOverviewResponse>> getChapterOverview(
+            @PathVariable Long comicId,
+            @PathVariable Integer chapterNumber
+    ) {
+        return ResponseEntity.ok(
+                DataResponse.<ChapterOverviewResponse>builder()
+                        .data(comicService.getChapterOverview(comicId, chapterNumber))
+                        .build()
+        );
+    }
+
     @PutMapping("/{comicId}/ratings")
     public ResponseEntity<RateComicResponse> rateComic(
             @PathVariable Long comicId,

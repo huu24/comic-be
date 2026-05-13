@@ -12,4 +12,5 @@ public interface ChapterRepository extends JpaRepository<Chapter, Long> {
 
 	Page<Chapter> findByComicIdOrderByChapterNumberAsc(Long comicId, Pageable pageable);
     List<Chapter> findByComicIdOrderByChapterNumberAsc(Long comicId);
+    Chapter findByComicIdAndChapterNumber(Long comicId, Integer chapterNumber);
 }
