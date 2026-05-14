@@ -39,6 +39,7 @@ build/
 
 ### Local Storage & Data ###
 minio_data/
+pgdata/
 docs/
 
 ### Log Files ###
