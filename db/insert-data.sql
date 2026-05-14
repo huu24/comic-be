@@ -83,6 +83,7 @@ INSERT INTO pages (
     page_number,
     image_url,
     cleaned_image_url,
+    status,
     created_at
 )
 VALUES
@@ -91,60 +92,71 @@ VALUES
 (1, 1,
 'https://example.com/pages/shadow-hunter/ch1/1.jpg',
 'https://example.com/pages-clean/shadow-hunter/ch1/1.jpg',
+'PENDING',
 NOW()),
 
 (1, 2,
 'https://example.com/pages/shadow-hunter/ch1/2.jpg',
 'https://example.com/pages-clean/shadow-hunter/ch1/2.jpg',
+'PENDING',
 NOW()),
 
 (1, 3,
 'https://example.com/pages/shadow-hunter/ch1/3.jpg',
 'https://example.com/pages-clean/shadow-hunter/ch1/3.jpg',
+'PENDING',
 NOW()),
 
 -- Chapter 2
 (2, 1,
 'https://example.com/pages/shadow-hunter/ch2/1.jpg',
 'https://example.com/pages-clean/shadow-hunter/ch2/1.jpg',
+'PENDING',
 NOW()),
 
 (2, 2,
 'https://example.com/pages/shadow-hunter/ch2/2.jpg',
 'https://example.com/pages-clean/shadow-hunter/ch2/2.jpg',
+'PENDING',
 NOW()),
 
 -- Love in Tokyo
 (4, 1,
 'https://example.com/pages/love-tokyo/ch1/1.jpg',
 'https://example.com/pages-clean/love-tokyo/ch1/1.jpg',
+'PENDING',
 NOW()),
 
 (4, 2,
 'https://example.com/pages/love-tokyo/ch1/2.jpg',
 'https://example.com/pages-clean/love-tokyo/ch1/2.jpg',
+'PENDING',
 NOW()),
 
 -- Galaxy Warriors
 (6, 1,
 'https://example.com/pages/galaxy/ch1/1.jpg',
 'https://example.com/pages-clean/galaxy/ch1/1.jpg',
+'PENDING',
 NOW()),
 
 (6, 2,
 'https://example.com/pages/galaxy/ch1/2.jpg',
 'https://example.com/pages-clean/galaxy/ch1/2.jpg',
+'PENDING',
 NOW()),
 
 -- Mystic Academy
 (8, 1,
 'https://example.com/pages/mystic/ch1/1.jpg',
 'https://example.com/pages-clean/mystic/ch1/1.jpg',
+'PENDING',
 NOW()),
 
 (8, 2,
 'https://example.com/pages/mystic/ch1/2.jpg',
 'https://example.com/pages-clean/mystic/ch1/2.jpg',
+'PENDING',
 NOW());
 -- =========================
 -- RATINGS
