@@ -45,11 +45,12 @@ public class ChapterController {
     public ResponseEntity<DataResponse<List<ChapterPageResponse>>> uploadPages(
         @PathVariable Long chapterId,
         @RequestParam(defaultValue = "1") int startPageNumber,
-        @RequestParam("files") List<MultipartFile> files
+        @RequestParam("files") List<MultipartFile> files,
+        @RequestParam(value = "targetLangs", defaultValue = "vi") List<String> targetLangs
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
             DataResponse.<List<ChapterPageResponse>>builder()
-                .data(comicService.uploadChapterPages(chapterId, startPageNumber, files))
+                .data(comicService.uploadChapterPages(chapterId, startPageNumber, files, targetLangs))
                 .build()
         );
     }

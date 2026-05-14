@@ -239,3 +239,16 @@ VALUES
 (2, 3, 'READ_LATER', NOW()),
 (1, 4, 'FAVORITE', NOW()),
 (2, 5, 'READING', NOW());
+
+INSERT INTO user_libraries (
+    user_id,
+    comic_id,
+    list_type,
+    created_at
+)
+VALUES
+(3, 1, 'FAVORITE', NOW()),
+(3, 2, 'READING', NOW()),
+(3, 3, 'READ_LATER', NOW()),
+(3, 4, 'FAVORITE', NOW()),
+(3, 5, 'READING', NOW());

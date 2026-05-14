@@ -37,6 +37,7 @@ public class ComicService {
     private final ComicCategoryRepository comicCategoryRepository;
     private final CurrentUserService currentUserService;
     private final MinioStorageService minioStorageService;
+    private final PipelineProducerService pipelineProducerService;
 
     @Transactional
     public ComicCreateResponse createComic(ComicCreateRequest request) {
@@ -203,12 +204,16 @@ public class ComicService {
 
     @Transactional
     public List<ChapterPageResponse> uploadChapterPages(Long chapterId, int startPageNumber,
-            List<MultipartFile> files) {
+            List<MultipartFile> files, List<String> targetLangs) {
         currentUserService.requireAdmin();
 
-        chapterRepository
+        Chapter chapter = chapterRepository
                 .findById(chapterId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy chương truyện."));
+
+        Comic comic = comicRepository
+                .findById(chapter.getComicId())
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
 
         if (files == null || files.isEmpty()) {
             throw new IllegalArgumentException("Vui lòng chọn ít nhất một ảnh để tải lên.");
@@ -231,12 +236,28 @@ public class ComicService {
                     .chapterId(chapterId)
                     .pageNumber(pageNumber)
                     .imageUrl(objectName)
+                    .status(ProcessStatus.PENDING)
                     .build();
             pagesToSave.add(page);
             pageNumber++;
         }
 
         List<ChapterPage> savedPages = chapterPageRepository.saveAll(pagesToSave);
+
+        for (ChapterPage page : savedPages) {
+            PipelineJobRequest jobRequest = PipelineJobRequest.builder()
+                    .job_id("chapter_" + chapterId + "_page_" + page.getPageNumber())
+                    .chapter_id(String.valueOf(chapterId))
+                    .page_id(String.valueOf(page.getId()))
+                    .image_url(minioStorageService.resolvePublicUrl(page.getImageUrl()))
+                    .source_lang(comic.getOriginalLanguage() != null ? comic.getOriginalLanguage() : "ja")
+                    .target_langs(targetLangs)
+                    .comic_type(comic.getFormat() != null ? comic.getFormat().toLowerCase() : "manga")
+                    .skip_translate(false)
+                    .webhook_url("http://comic_backend:8080/comic/api/internal/webhook/processing-result")
+                    .build();
+            pipelineProducerService.sendToPipeline(jobRequest);
+        }
 
         return savedPages.stream().map(this::toPageResponse).toList();
     }
