@@ -1,5 +1,6 @@
 package com.example.comic.service;
 
+import com.example.comic.event.ComicSavedEvent;
 import com.example.comic.exception.AlreadyExistsException;
 import com.example.comic.exception.NotFoundException;
 import com.example.comic.model.*;
@@ -12,6 +13,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,23 +39,46 @@ public class ComicService {
     private final ComicCategoryRepository comicCategoryRepository;
     private final CurrentUserService currentUserService;
     private final MinioStorageService minioStorageService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
-    public ComicCreateResponse createComic(ComicCreateRequest request) {
+    public ComicCreateResponse createComic(ComicCreateRequest request, MultipartFile coverImage) {
         currentUserService.requireAdmin();
+
+        if (coverImage == null || coverImage.isEmpty()) {
+            throw new IllegalArgumentException("Ảnh bìa là bắt buộc.");
+        }
+
+        validateUploadFile(coverImage);
 
         Comic comic = Comic
                 .builder()
                 .title(request.getTitle().trim())
                 .description(trimToNull(request.getDescription()))
                 .author(trimToNull(request.getAuthor()))
-                .coverImageUrl(trimToNull(request.getCoverImageUrl()))
                 .originalLanguage(trimToNull(request.getOriginalLanguage()))
                 .format(request.getFormat().trim())
                 .status(trimToNull(request.getStatus()))
                 .build();
 
         Comic savedComic = comicRepository.save(comic);
+
+        String coverUrl = minioStorageService.uploadComicCover(savedComic.getId(), coverImage);
+        savedComic.setCoverImageUrl(coverUrl);
+        comicRepository.save(savedComic);
+
+        List<Long> genres = request.getGenres();
+        if (genres != null && !genres.isEmpty()) {
+            List<ComicCategory> comicCategories = genres.stream()
+                    .filter(id -> categoryRepository.existsById(id))
+                    .map(id -> ComicCategory.builder().comicId(savedComic.getId()).categoryId(id).build())
+                    .toList();
+            if (!comicCategories.isEmpty()) {
+                comicCategoryRepository.saveAll(comicCategories);
+            }
+        }
+
+        applicationEventPublisher.publishEvent(new ComicSavedEvent(savedComic));
         return ComicCreateResponse
                 .builder()
                 .id(savedComic.getId())
@@ -321,26 +346,30 @@ public class ComicService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+    private void validateUploadFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Tệp ảnh không hợp lệ hoặc đang rỗng.");
+        }
+
+        if (file.getSize() > MAX_UPLOAD_SIZE_BYTES) {
+            throw new IllegalArgumentException("Ảnh vượt quá dung lượng cho phép 5MB.");
+        }
+
+        String fileName = file.getOriginalFilename();
+        String extension = extractExtension(fileName);
+        String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
+        boolean validContentType = contentType.startsWith("image/");
+        boolean validExtension = extension != null
+                && ALLOWED_IMAGE_EXTENSIONS.contains(extension.toLowerCase(Locale.ROOT));
+
+        if (!validContentType || !validExtension) {
+            throw new IllegalArgumentException("Chỉ chấp nhận các định dạng hình ảnh: JPG, PNG, WEBP.");
+        }
+    }
+
     private void validateUploadFiles(List<MultipartFile> files) {
         for (MultipartFile file : files) {
-            if (file == null || file.isEmpty()) {
-                throw new IllegalArgumentException("Tệp ảnh không hợp lệ hoặc đang rỗng.");
-            }
-
-            if (file.getSize() > MAX_UPLOAD_SIZE_BYTES) {
-                throw new IllegalArgumentException("Ảnh vượt quá dung lượng cho phép 5MB.");
-            }
-
-            String fileName = file.getOriginalFilename();
-            String extension = extractExtension(fileName);
-            String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
-            boolean validContentType = contentType.startsWith("image/");
-            boolean validExtension = extension != null
-                    && ALLOWED_IMAGE_EXTENSIONS.contains(extension.toLowerCase(Locale.ROOT));
-
-            if (!validContentType || !validExtension) {
-                throw new IllegalArgumentException("Chỉ chấp nhận các định dạng hình ảnh: JPG, PNG, WEBP.");
-            }
+            validateUploadFile(file);
         }
     }
 
