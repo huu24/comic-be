@@ -2,17 +2,9 @@ package com.example.comic.service;
 
 import com.example.comic.exception.AlreadyExistsException;
 import com.example.comic.exception.NotFoundException;
-import com.example.comic.model.Chapter;
-import com.example.comic.model.ChapterPage;
-import com.example.comic.model.Comic;
-import com.example.comic.model.ComicRating;
-import com.example.comic.model.User;
+import com.example.comic.model.*;
 import com.example.comic.model.dto.*;
-import com.example.comic.repository.ChapterPageRepository;
-import com.example.comic.repository.ChapterRepository;
-import com.example.comic.repository.ComicCategoryRepository;
-import com.example.comic.repository.ComicRatingRepository;
-import com.example.comic.repository.ComicRepository;
+import com.example.comic.repository.*;
 
 import java.util.List;
 import java.util.Locale;
@@ -41,6 +33,7 @@ public class ComicService {
     private final ChapterRepository chapterRepository;
     private final ChapterPageRepository chapterPageRepository;
     private final ComicRatingRepository comicRatingRepository;
+    private final CategoryRepository categoryRepository;
     private final ComicCategoryRepository comicCategoryRepository;
     private final CurrentUserService currentUserService;
     private final MinioStorageService minioStorageService;
@@ -406,5 +399,9 @@ public class ComicService {
                 .title(chapter.getTitle())
                 .chapterNumber(chapterNumber)
                 .build();
+    }
+
+    public List<Category> getGenreList() {
+        return categoryRepository.findAll();
     }
 }

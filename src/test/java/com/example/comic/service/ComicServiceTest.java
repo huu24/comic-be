@@ -15,11 +15,7 @@ import com.example.comic.model.dto.ComicCreateResponse;
 import com.example.comic.model.dto.ComicRatingResponse;
 import com.example.comic.model.dto.ComicSummaryResponse;
 import com.example.comic.model.dto.PageDataResponse;
-import com.example.comic.repository.ChapterPageRepository;
-import com.example.comic.repository.ChapterRepository;
-import com.example.comic.repository.ComicCategoryRepository;
-import com.example.comic.repository.ComicRatingRepository;
-import com.example.comic.repository.ComicRepository;
+import com.example.comic.repository.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +43,7 @@ class ComicServiceTest {
         private ChapterPageRepository chapterPageRepository;
         private ComicRatingRepository comicRatingRepository;
         private ComicCategoryRepository comicCategoryRepository;
+        private CategoryRepository categoryRepository;
         private CurrentUserService currentUserService;
         private MinioStorageService minioStorageService;
         private ComicService comicService;
@@ -65,6 +62,7 @@ class ComicServiceTest {
                                 chapterRepository,
                                 chapterPageRepository,
                                 comicRatingRepository,
+                                categoryRepository,
                                 comicCategoryRepository,
                                 currentUserService,
                                 minioStorageService);

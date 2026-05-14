@@ -1,5 +1,6 @@
 package com.example.comic.controller;
 
+import com.example.comic.model.Category;
 import com.example.comic.model.dto.*;
 import com.example.comic.service.ComicService;
 import jakarta.validation.Valid;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/comics")
@@ -99,5 +102,10 @@ public class ComicController {
             @Valid @RequestBody ComicRatingRequest request) {
         ComicRatingResponse data = comicService.rateComic(comicId, request.getScore());
         return ResponseEntity.ok(RateComicResponse.builder().message("Đánh giá thành công.").data(data).build());
+    }
+
+    @GetMapping("/genres")
+    public ResponseEntity<List<Category>> getGenres() {
+        return ResponseEntity.ok(comicService.getGenreList());
     }
 }
