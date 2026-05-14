@@ -2,6 +2,8 @@ package com.example.comic.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -41,6 +43,12 @@ public class ChapterPage {
 
     @Column(name = "original_metadata_url")
     private String originalMetadataUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private ProcessStatus status = ProcessStatus.PENDING;
+
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
