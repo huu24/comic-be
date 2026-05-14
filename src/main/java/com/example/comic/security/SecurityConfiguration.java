@@ -41,7 +41,8 @@ public class SecurityConfiguration {
                         "/swagger-ui/**",
                         "/swagger-ui.html",
                         "/oauth2/**",
-                        "/login/oauth2/**"
+                        "/login/oauth2/**",
+                        "/api/internal/webhook/**"
         };
 
         private static final String[] PUBLIC_GET_ENDPOINTS = {
