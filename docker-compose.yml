@@ -12,6 +12,8 @@ services:
     volumes:
       - ./minio_data:/data
     command: server /data --console-address ":9001"
+    networks:
+      - comic-network
 
   db:
     image: postgres:15-alpine
@@ -30,6 +32,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - comic-network
 
   backend:
     build:
@@ -58,3 +62,9 @@ services:
       minio:
         condition: service_started
     restart: on-failure
+    networks:
+      - comic-network
+
+networks:
+  comic-network:
+    external: true
