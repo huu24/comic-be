@@ -2,7 +2,7 @@
 -- USERS
 -- =========================
 INSERT INTO public.users (auth_provider,avatar_url,created_at,daily_ai_usage,email,full_name,last_ai_usage_date,password_hash,"role",status,updated_at) VALUES
-	 ('LOCAL',NULL,'2026-05-08 20:37:46.696644+07',0,'hlklonga5@gmail.com','Hoang Le Kim Long','2026-05-08','$2a$10$PaVVwQMkVCUo9V5mOLZDEO7HYkVDCX3pFhK2DQkwV8u6wnqzelIsq','MEMBER','ACTIVE','2026-05-08 20:37:46.696644+07'),
+	 ('LOCAL',NULL,'2026-05-08 20:37:46.696644+07',0,'hlklonga5@gmail.com','Hoang Le Kim Long','2026-05-08','$2a$10$PaVVwQMkVCUo9V5mOLZDEO7HYkVDCX3pFhK2DQkwV8u6wnqzelIsq','ADMIN','ACTIVE','2026-05-08 20:37:46.696644+07'),
 	 ('LOCAL',NULL,'2026-05-10 01:04:39.436125+07',0,'dung@gmail.com','Nguyen Tien Dung','2026-05-09','$2a$10$Vv7nBM2hqxuVi9NXvpKO5O99q6gbDKTMs.x3uMz98JaDxyATCpkJ2','MEMBER','ACTIVE','2026-05-10 01:04:39.436125+07');
 
 -- =========================
