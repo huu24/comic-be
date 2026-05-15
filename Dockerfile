@@ -7,7 +7,7 @@ COPY pom.xml pom.xml
 
 COPY src src
 
-RUN ./mvnw -DskipTests package -DskipTests
+RUN ./mvnw -Dmaven.test.skip=true package
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
