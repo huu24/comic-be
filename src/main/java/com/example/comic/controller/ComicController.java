@@ -35,8 +35,8 @@ public class ComicController {
     public ResponseEntity<DataResponse<ComicCreateResponse>> createComic(
             @RequestParam("title") String title,
             @RequestParam(value = "description", required = false) String description,
-            @RequestParam(value = "author", required = false) String author,
-            @RequestParam(value = "originalLanguage", required = false) String originalLanguage,
+            @RequestParam(value = "author", required = true) String author,
+            @RequestParam(value = "originalLanguage", required = true) String originalLanguage,
             @RequestParam("format") String format,
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "genres", required = false) List<Long> genres,
