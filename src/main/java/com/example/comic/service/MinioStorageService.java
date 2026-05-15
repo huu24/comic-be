@@ -6,6 +6,7 @@ import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
+import io.minio.SetBucketPolicyArgs;
 import jakarta.annotation.PostConstruct;
 import java.io.InputStream;
 import java.util.UUID;
@@ -35,6 +36,21 @@ public class MinioStorageService {
             if (!exists) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
             }
+
+            // Đảm bảo bucket có quyền Public Read (để Pipeline và FE tải được bằng HTTP GET)
+            String policy = "{\n" +
+                    "  \"Statement\": [\n" +
+                    "    {\n" +
+                    "      \"Action\": \"s3:GetObject\",\n" +
+                    "      \"Effect\": \"Allow\",\n" +
+                    "      \"Principal\": \"*\",\n" +
+                    "      \"Resource\": \"arn:aws:s3:::" + bucketName + "/*\"\n" +
+                    "    }\n" +
+                    "  ],\n" +
+                    "  \"Version\": \"2012-10-17\"\n" +
+                    "}";
+            minioClient.setBucketPolicy(SetBucketPolicyArgs.builder().bucket(bucketName).config(policy).build());
+            
         } catch (Exception ex) {
             if (ex instanceof InterruptedException || ex.getCause() instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
