@@ -76,7 +76,7 @@ public class MinioStorageService {
                             .contentType(
                                     file.getContentType() == null ? "application/octet-stream" : file.getContentType())
                             .build());
-            return objectName;
+            return resolvePublicUrl(objectName);
         } catch (Exception ex) {
             throw new IllegalStateException("Không thể tải ảnh lên MinIO.", ex);
         }
