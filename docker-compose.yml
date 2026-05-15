@@ -51,6 +51,7 @@ services:
       MINIO_SECRET_KEY: "${MINIO_SECRET_KEY:-password123}"
       MINIO_BUCKET: "${MINIO_BUCKET:-comic}"
       MINIO_PUBLIC_BASE_URL: "${MINIO_PUBLIC_BASE_URL:-http://localhost:9000/comic}"
+      MINIO_INTERNAL_BASE_URL: "http://minio:9000/comic"
       JWT_SECRET_KEY: "${JWT_SECRET_KEY:-change-me-to-secure-value}"
       OTP_EXPIRATION_SECONDS: "${OTP_EXPIRATION_SECONDS:-300}"
       OTP_MAIL_FROM: "${OTP_MAIL_FROM:-no-reply@comic.local}"
