@@ -29,6 +29,9 @@ public class MinioStorageService {
     @Value("${application.storage.s3.public-base-url}")
     private String publicBaseUrl;
 
+    @Value("${application.storage.s3.internal-base-url}")
+    private String internalBaseUrl;
+
     @PostConstruct
     public void ensureBucketExists() {
         try {
@@ -76,9 +79,9 @@ public class MinioStorageService {
                             .contentType(
                                     file.getContentType() == null ? "application/octet-stream" : file.getContentType())
                             .build());
-            return resolvePublicUrl(objectName);
+            return objectName;
         } catch (Exception ex) {
-            throw new IllegalStateException("Không thể tải ảnh lên MinIO.", ex);
+            throw new IllegalStateException("Không thể tải ảnh lên MinIO: " + objectName, ex);
         }
     }
 
@@ -126,7 +129,15 @@ public class MinioStorageService {
         }
     }
 
+    public String resolveInternalUrl(String source) {
+        return resolveWithBase(source, internalBaseUrl);
+    }
+
     public String resolvePublicUrl(String source) {
+        return resolveWithBase(source, publicBaseUrl);
+    }
+
+    private String resolveWithBase(String source, String baseUrl) {
         if (source == null || source.isBlank()) {
             return source;
         }
@@ -135,7 +146,7 @@ public class MinioStorageService {
             return source;
         }
 
-        String base = publicBaseUrl == null ? "" : publicBaseUrl.trim();
+        String base = baseUrl == null ? "" : baseUrl.trim();
         if (base.isBlank()) {
             return source;
         }

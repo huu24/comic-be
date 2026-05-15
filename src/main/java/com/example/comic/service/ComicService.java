@@ -254,13 +254,17 @@ public class ComicService {
         }
 
         List<ChapterPage> pagesToSave = new java.util.ArrayList<>(files.size());
+        List<String> rawObjectNames = new java.util.ArrayList<>(files.size());
+
         for (MultipartFile file : files) {
             String objectName = minioStorageService.uploadComicPage(chapterId, pageNumber, file);
+            rawObjectNames.add(objectName);
+
             ChapterPage page = ChapterPage
                     .builder()
                     .chapterId(chapterId)
                     .pageNumber(pageNumber)
-                    .imageUrl(objectName)
+                    .imageUrl(minioStorageService.resolvePublicUrl(objectName))
                     .status(ProcessStatus.PENDING)
                     .build();
             pagesToSave.add(page);
@@ -269,18 +273,20 @@ public class ComicService {
 
         List<ChapterPage> savedPages = chapterPageRepository.saveAll(pagesToSave);
 
-        for (ChapterPage page : savedPages) {
+        for (int i = 0; i < savedPages.size(); i++) {
+            ChapterPage page = savedPages.get(i);
             PipelineJobRequest jobRequest = PipelineJobRequest.builder()
                     .job_id("chapter_" + chapterId + "_page_" + page.getPageNumber())
                     .chapter_id(String.valueOf(chapterId))
                     .page_id(String.valueOf(page.getId()))
-                    .image_url(minioStorageService.resolvePublicUrl(page.getImageUrl()))
+                    .image_url(minioStorageService.resolveInternalUrl(rawObjectNames.get(i)))
                     .source_lang(comic.getOriginalLanguage() != null ? comic.getOriginalLanguage() : "ja")
                     .target_langs(targetLangs)
                     .comic_type(comic.getFormat() != null ? comic.getFormat().toLowerCase() : "manga")
                     .skip_translate(false)
                     .webhook_url("http://comic-backend:8080/comic/api/internal/webhook/processing-result")
                     .build();
+            System.out.println(page.getImageUrl());
             pipelineProducerService.sendToPipeline(jobRequest);
         }
 
