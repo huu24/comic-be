@@ -279,7 +279,7 @@ public class ComicService {
                     .target_langs(targetLangs)
                     .comic_type(comic.getFormat() != null ? comic.getFormat().toLowerCase() : "manga")
                     .skip_translate(false)
-                    .webhook_url("http://comic_backend:8080/comic/api/internal/webhook/processing-result")
+                    .webhook_url("http://comic-backend:8080/comic/api/internal/webhook/processing-result")
                     .build();
             pipelineProducerService.sendToPipeline(jobRequest);
         }
