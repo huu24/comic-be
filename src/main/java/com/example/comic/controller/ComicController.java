@@ -2,10 +2,14 @@ package com.example.comic.controller;
 
 import com.example.comic.model.Category;
 import com.example.comic.model.dto.*;
+import com.example.comic.model.document.ComicDocument;
+import com.example.comic.service.ComicSearchService;
+import java.util.List;
 import com.example.comic.service.ComicService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,9 +18,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/comics")
@@ -24,13 +29,34 @@ import java.util.List;
 public class ComicController {
 
     private final ComicService comicService;
+    private final ComicSearchService comicSearchService;
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DataResponse<ComicCreateResponse>> createComic(
-            @Valid @RequestBody ComicCreateRequest request) {
+            @RequestParam("title") String title,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "author", required = false) String author,
+            @RequestParam(value = "originalLanguage", required = false) String originalLanguage,
+            @RequestParam("format") String format,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "genres", required = false) List<Long> genres,
+            @RequestParam("coverImage") MultipartFile coverImage) {
+
+        ComicCreateRequest request = ComicCreateRequest.builder()
+                .title(title)
+                .description(description)
+                .author(author)
+                .originalLanguage(originalLanguage)
+                .format(format)
+                .status(status)
+                .genres(genres)
+                .build();
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(DataResponse.<ComicCreateResponse>builder().data(comicService.createComic(request)).build());
+                .body(DataResponse.<ComicCreateResponse>builder()
+                        .data(comicService.createComic(request, coverImage))
+                        .build());
     }
 
     @PostMapping("/{comicId}/chapters")

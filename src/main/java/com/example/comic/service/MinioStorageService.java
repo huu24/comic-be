@@ -66,6 +66,27 @@ public class MinioStorageService {
         }
     }
 
+    public String uploadComicCover(Long comicId, MultipartFile file) {
+        String originalName = file.getOriginalFilename() == null ? "cover" : file.getOriginalFilename();
+        String extension = getExtension(originalName);
+        String objectName = String.format("comics/%d/cover-%s%s", comicId, UUID.randomUUID(), extension);
+
+        try (InputStream inputStream = file.getInputStream()) {
+            minioClient.putObject(
+                    PutObjectArgs
+                            .builder()
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .stream(inputStream, file.getSize(), 10 * 1024 * 1024L)
+                            .contentType(
+                                    file.getContentType() == null ? "application/octet-stream" : file.getContentType())
+                            .build());
+            return resolvePublicUrl(objectName);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Không thể tải ảnh bìa lên MinIO.", ex);
+        }
+    }
+
     public void deleteObject(String objectName) {
         if (objectName == null || objectName.isBlank()) {
             return;

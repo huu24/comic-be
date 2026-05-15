@@ -2,6 +2,7 @@ package com.example.comic.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,9 +24,6 @@ public class ComicCreateRequest {
     @Schema(example = "Eiichiro Oda")
     private String author;
 
-    @Schema(example = "https://example.com/covers/one-piece.jpg")
-    private String coverImageUrl;
-
     @Schema(example = "ja")
     private String originalLanguage;
 
@@ -35,4 +33,7 @@ public class ComicCreateRequest {
 
     @Schema(example = "ONGOING")
     private String status;
+
+    @Schema(example = "[1, 2, 3]")
+    private List<Long> genres;
 }
