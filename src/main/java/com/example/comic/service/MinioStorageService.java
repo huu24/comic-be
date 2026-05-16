@@ -110,8 +110,11 @@ public class MinioStorageService {
         if (objectName == null || objectName.isBlank()) {
             return;
         }
+
+        String actualObjectName = extractObjectName(objectName);
+
         try {
-            minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucketName).object(objectName).build());
+            minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucketName).object(actualObjectName).build());
         } catch (Exception ex) {
             throw new IllegalStateException("Không thể xóa ảnh trên MinIO.", ex);
         }
@@ -121,8 +124,11 @@ public class MinioStorageService {
         if (objectName == null || objectName.isBlank()) {
             return null;
         }
+
+        String actualObjectName = extractObjectName(objectName);
+
         try (InputStream is = minioClient.getObject(
-                GetObjectArgs.builder().bucket(bucketName).object(objectName).build())) {
+                GetObjectArgs.builder().bucket(bucketName).object(actualObjectName).build())) {
             return new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
         } catch (Exception ex) {
             throw new IllegalStateException("Không thể tải file từ MinIO: " + objectName, ex);
@@ -154,6 +160,23 @@ public class MinioStorageService {
         String normalizedBase = base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
         String normalizedSource = source.startsWith("/") ? source.substring(1) : source;
         return normalizedBase + "/" + normalizedSource;
+    }
+
+    public String extractObjectName(String urlOrPath) {
+        if (urlOrPath == null || urlOrPath.isBlank()) {
+            return urlOrPath;
+        }
+        String path = urlOrPath;
+        if (publicBaseUrl != null && !publicBaseUrl.isBlank() && path.startsWith(publicBaseUrl)) {
+            path = path.substring(publicBaseUrl.length());
+        } else if (internalBaseUrl != null && !internalBaseUrl.isBlank() && path.startsWith(internalBaseUrl)) {
+            path = path.substring(internalBaseUrl.length());
+        }
+        if (path.startsWith("/comic")) {
+            path = path.substring(6);
+        }
+        log.info("extracted path " + path + " from url " + urlOrPath);
+        return path;
     }
 
     private String getExtension(String filename) {
