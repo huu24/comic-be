@@ -89,9 +89,28 @@ public class PageService {
                     if (transBubble.has("full_translation")) {
                         origObj.set("full_translation", transBubble.get("full_translation"));
                     }
-                    if (transBubble.has("chunk_meanings")) {
-                        origObj.set("chunk_meanings", transBubble.get("chunk_meanings"));
-                    }
+                    if (transBubble.has("chunk_meanings") && origObj.has("chunks")) {
+                        JsonNode origChunks = origObj.get("chunks");
+                        JsonNode transChunkMeanings = transBubble.get("chunk_meanings");
+                        
+                        if (origChunks.isArray() && transChunkMeanings.isArray()) {
+                            for (JsonNode origChunk : origChunks) {
+                                String chunkId = origChunk.path("chunk_id").asText();
+                                for (JsonNode transChunk : transChunkMeanings) {
+                                    if (chunkId.equals(transChunk.path("chunk_id").asText()) && origChunk.isObject()) {
+                                        ObjectNode chunkObj = (ObjectNode) origChunk;
+                                        if (transChunk.has("type")) {
+                                            chunkObj.set("type", transChunk.get("type"));
+                                        }
+                                        if (transChunk.has("meaning")) {
+                                            chunkObj.set("meaning", transChunk.get("meaning"));
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }                   
                     break;
                 }
             }
