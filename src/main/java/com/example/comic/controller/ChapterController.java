@@ -46,7 +46,7 @@ public class ChapterController {
         @PathVariable Long chapterId,
         @RequestParam(defaultValue = "1") int startPageNumber,
         @RequestParam("files") List<MultipartFile> files,
-        @RequestParam(value = "targetLangs", defaultValue = "vi") List<String> targetLangs
+        @RequestParam(value = "targetLangs", defaultValue = "en,vi") List<String> targetLangs
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
             DataResponse.<List<ChapterPageResponse>>builder()
