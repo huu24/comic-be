@@ -74,7 +74,7 @@ public class ComicController {
     @GetMapping("/search")
     public ResponseEntity<DataResponse<List<ComicSearchResult>>> searchComics(
             @RequestParam String keyword,
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "20") int limit) {
         return ResponseEntity.ok(
                 DataResponse.<List<ComicSearchResult>>builder()
                         .data(comicSearchService.searchComics(keyword, limit))
@@ -82,11 +82,11 @@ public class ComicController {
     }
 
     @GetMapping("/search/detail")
-    public ResponseEntity<DataResponse<List<ComicDetailSearchResult>>> searchComicsDetail(
+    public ResponseEntity<DataResponse<PageDataResponse<ComicDetailSearchResult>>> searchComicsDetail(
             @RequestParam String keyword,
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "20") int limit) {
         return ResponseEntity.ok(
-                DataResponse.<List<ComicDetailSearchResult>>builder()
+                DataResponse.<PageDataResponse<ComicDetailSearchResult>>builder()
                         .data(comicSearchService.searchComicsDetail(keyword, limit))
                         .build());
     }

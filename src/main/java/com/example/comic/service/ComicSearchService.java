@@ -3,11 +3,13 @@ package com.example.comic.service;
 import com.example.comic.model.document.ComicDocument;
 import com.example.comic.model.dto.ComicDetailSearchResult;
 import com.example.comic.model.dto.ComicSearchResult;
+import com.example.comic.model.dto.PageDataResponse;
 import com.example.comic.repository.search.ComicSearchRepository;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +17,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ComicSearchService {
 
-    private static final int MIN_KEYWORD_LENGTH = 2;
-    private static final int DEFAULT_RESULT_LIMIT = 10;
+    private static final int MIN_KEYWORD_LENGTH = 1;
+    private static final int DEFAULT_RESULT_LIMIT = 20;
     private static final int MAX_RESULT_LIMIT = 50;
 
     private final ComicSearchRepository comicSearchRepository;
@@ -39,20 +41,38 @@ public class ComicSearchService {
     }
 
     @Cacheable(value = "comicSearchDetail", key = "#keyword + '-' + #limit")
-    public List<ComicDetailSearchResult> searchComicsDetail(String keyword, int limit) {
+    public PageDataResponse<ComicDetailSearchResult> searchComicsDetail(String keyword, int limit) {
         if (keyword == null || keyword.isBlank() || keyword.trim().length() < MIN_KEYWORD_LENGTH) {
-            return Collections.emptyList();
+            return PageDataResponse.<ComicDetailSearchResult>builder()
+                    .content(Collections.emptyList())
+                    .pageNo(0)
+                    .pageSize(0)
+                    .totalElements(0)
+                    .totalPages(0)
+                    .last(true)
+                    .build();
         }
 
         String trimmed = keyword.trim().toLowerCase();
         int actualLimit = Math.clamp(limit, 1, MAX_RESULT_LIMIT);
 
-        return comicSearchRepository
-                .searchByKeyword(trimmed, PageRequest.of(0, actualLimit))
-                .getContent()
+        Page<ComicDocument> page = comicSearchRepository
+                .searchByKeyword(trimmed, PageRequest.of(0, actualLimit));
+
+        List<ComicDetailSearchResult> content = page.getContent()
                 .stream()
                 .map(this::toDetailSearchResult)
                 .toList();
+
+        return PageDataResponse
+                .<ComicDetailSearchResult>builder()
+                .content(content)
+                .pageNo(page.getNumber())
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
+                .build();
     }
 
     private ComicSearchResult toQuickSearchResult(ComicDocument document) {

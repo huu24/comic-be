@@ -57,6 +57,8 @@ services:
       OTP_MAIL_FROM: "${OTP_MAIL_FROM:-no-reply@comic.local}"
       MAIL_USERNAME: "${MAIL_USERNAME}"
       MAIL_PASSWORD: "${MAIL_PASSWORD}"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET}"
       SPRING_ELASTICSEARCH_URIS: "http://elasticsearch:9200"
       SPRING_DATA_REDIS_HOST: "redis"
       REDIS_HOST: "redis"
