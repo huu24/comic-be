@@ -71,6 +71,8 @@ services:
       redis:
         condition: service_started
     restart: on-failure
+    networks:
+      - comic-network
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -83,6 +85,8 @@ services:
     depends_on:
       - db
     restart: on-failure
+    networks:
+      - comic-network
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
@@ -95,6 +99,8 @@ services:
       - "9200:9200"
     mem_limit: 1g
     restart: on-failure
+    networks:
+      - comic-network
 
   redis:
     image: redis:7-alpine
