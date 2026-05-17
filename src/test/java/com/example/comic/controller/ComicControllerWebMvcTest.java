@@ -7,6 +7,7 @@ import com.example.comic.model.dto.ComicSummaryResponse;
 import com.example.comic.model.dto.ChapterCreateResponse;
 import com.example.comic.security.JwtAuthenticationFilter;
 import com.example.comic.security.SecurityConfiguration;
+import com.example.comic.service.ComicSearchService;
 import com.example.comic.service.ComicService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
@@ -25,6 +26,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -49,20 +51,21 @@ class ComicControllerWebMvcTest {
     @MockBean
     private ComicService comicService;
 
+    @MockBean
+    private ComicSearchService comicSearchService;
+
     @Test
     void createComic_shouldReturnCreatedResponse() throws Exception {
-        when(comicService.createComic(any()))
+        when(comicService.createComic(any(), any()))
             .thenReturn(ComicCreateResponse.builder().id(10L).title("One Piece").build());
 
         mockMvc
             .perform(
-                post("/comics")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        objectMapper.writeValueAsString(
-                            java.util.Map.of("title", "One Piece", "format", "MANGA", "status", "ACTIVE")
-                        )
-                    )
+                multipart("/comics")
+                    .file("coverImage", "cover.png".getBytes())
+                    .param("title", "One Piece")
+                    .param("format", "MANGA")
+                    .param("status", "ACTIVE")
             )
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.data.id").value(10L))
@@ -71,11 +74,15 @@ class ComicControllerWebMvcTest {
 
     @Test
     void createComic_shouldReturnBadRequestWhenInvalidPayload() throws Exception {
+        when(comicService.createComic(any(), any()))
+            .thenThrow(new IllegalArgumentException("Tên truyện là bắt buộc."));
+
         mockMvc
             .perform(
-                post("/comics")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(java.util.Map.of("title", "", "format", "")))
+                multipart("/comics")
+                    .file("coverImage", "cover.png".getBytes())
+                    .param("title", "")
+                    .param("format", "")
             )
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error.status").value("INVALID_ARGUMENT"));

@@ -55,7 +55,7 @@ class OAuth2LoginSuccessHandlerTest {
 
         verify(authService).authenticateGoogleUser(eq("google@example.com"), eq("Google User"), eq("avatar-url"));
         assertTrue(response.getHeader("Set-Cookie").contains("COMIC_AUTH=jwt-token"));
-        assertEquals("http://localhost:3000/oauth2/success", response.getRedirectedUrl());
+        assertEquals("http://localhost:3000/oauth2/success?token=jwt-token", response.getRedirectedUrl());
     }
 
     @Test
@@ -78,6 +78,6 @@ class OAuth2LoginSuccessHandlerTest {
 
         verify(authService).authenticateGoogleUser(eq("google@example.com"), eq(null), eq(null));
         assertTrue(response.getHeader("Set-Cookie").contains("COMIC_AUTH=jwt-token-2"));
-        assertEquals("http://localhost:3000/oauth2/success", response.getRedirectedUrl());
+        assertEquals("http://localhost:3000/oauth2/success?token=jwt-token-2", response.getRedirectedUrl());
     }
 }

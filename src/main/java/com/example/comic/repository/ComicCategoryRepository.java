@@ -12,6 +12,8 @@ public interface ComicCategoryRepository extends JpaRepository<ComicCategory, Co
 
     void deleteByCategoryId(Long categoryId);
 
+    void deleteByComicId(Long comicId);
+
     @Query("SELECT c.name FROM Category c JOIN ComicCategory cc ON c.id = cc.categoryId WHERE cc.comicId = :comicId")
     List<String> findCategoryNamesByComicId(@Param("comicId") Long comicId);
 }

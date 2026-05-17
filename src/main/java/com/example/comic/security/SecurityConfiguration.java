@@ -47,6 +47,7 @@ public class SecurityConfiguration {
         private static final String[] PUBLIC_GET_ENDPOINTS = {
                         "/comics",
                         "/comics/*",
+                        "/comics/search/detail",
                         "/comics/*/chapters",
                         "/chapters/*/pages",
                         "comics/*/book-overview",
@@ -58,6 +59,7 @@ public class SecurityConfiguration {
         private static final String[] ADMIN_POST_ENDPOINTS = {
                         "/comics",
                         "/comics/*/chapters",
+                        "/comics/reindex",
                         "/chapters/*/pages",
                         "/categories"
         };

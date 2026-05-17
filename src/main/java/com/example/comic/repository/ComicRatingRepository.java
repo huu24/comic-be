@@ -14,4 +14,6 @@ public interface ComicRatingRepository extends JpaRepository<ComicRating, ComicR
     Double avgScoreByComicId(@Param("comicId") Long comicId);
 
     long countByComicId(Long comicId);
+
+    void deleteByComicId(Long comicId);
 }

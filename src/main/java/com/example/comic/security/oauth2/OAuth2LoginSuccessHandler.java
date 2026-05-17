@@ -7,6 +7,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -33,16 +35,35 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
 
         String email = getStringClaim(oauth2User, "email");
+        if (email == null || email.isBlank()) {
+            response.sendRedirect(buildFailureUrl("Không lấy được email từ Google"));
+            return;
+        }
+
         String name = getStringClaim(oauth2User, "name");
         String picture = getStringClaim(oauth2User, "picture");
 
         AuthResponse authResponse = authService.authenticateGoogleUser(email, name, picture);
-        response.addHeader("Set-Cookie", authCookieService.buildTokenCookie(authResponse.getToken()));
-        response.sendRedirect(successRedirectUrl);
+        String token = authResponse.getToken();
+
+        response.addHeader("Set-Cookie", authCookieService.buildTokenCookie(token));
+
+        String redirectUrl = successRedirectUrl;
+        if (redirectUrl.contains("?")) {
+            redirectUrl += "&token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+        } else {
+            redirectUrl += "?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+        }
+        response.sendRedirect(redirectUrl);
     }
 
     private String getStringClaim(OAuth2User oauth2User, String key) {
         Object value = oauth2User.getAttributes().get(key);
         return value == null ? null : String.valueOf(value);
+    }
+
+    private String buildFailureUrl(String message) {
+        String failureUrl = successRedirectUrl.replace("/success", "/failure");
+        return failureUrl + "?error=" + URLEncoder.encode(message, StandardCharsets.UTF_8);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.comic.service;
 
+import com.example.comic.event.ComicDeletedEvent;
 import com.example.comic.event.ComicSavedEvent;
 import com.example.comic.exception.AlreadyExistsException;
 import com.example.comic.exception.NotFoundException;
@@ -44,6 +45,13 @@ public class ComicService {
     @Transactional
     public ComicCreateResponse createComic(ComicCreateRequest request, MultipartFile coverImage) {
         currentUserService.requireAdmin();
+
+        if (request.getTitle() == null || request.getTitle().isBlank()) {
+            throw new IllegalArgumentException("Tên truyện là bắt buộc.");
+        }
+        if (request.getFormat() == null || request.getFormat().isBlank()) {
+            throw new IllegalArgumentException("Định dạng truyện là bắt buộc.");
+        }
 
         if (coverImage == null || coverImage.isEmpty()) {
             throw new IllegalArgumentException("Ảnh bìa là bắt buộc.");
@@ -395,6 +403,43 @@ public class ComicService {
                 .build();
     }
 
+    @Transactional
+    public void deleteComic(Long comicId) {
+        currentUserService.requireAdmin();
+
+        Comic comic = comicRepository.findById(comicId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
+
+        if (comic.getCoverImageUrl() != null && !comic.getCoverImageUrl().isBlank()) {
+            try {
+                minioStorageService.deleteObject(comic.getCoverImageUrl());
+            } catch (Exception ex) {
+            }
+        }
+
+        comicCategoryRepository.deleteByComicId(comicId);
+        comicRatingRepository.deleteByComicId(comicId);
+        
+        List<Chapter> chapters = chapterRepository.findByComicIdOrderByChapterNumberAsc(comicId);
+        for (Chapter chapter : chapters) {
+            List<ChapterPage> pages = chapterPageRepository.findByChapterIdOrderByPageNumberAsc(chapter.getId());
+            for (ChapterPage page : pages) {
+                if (page.getImageUrl() != null) {
+                    minioStorageService.deleteObject(page.getImageUrl());
+                }
+                if (page.getCleanedImageUrl() != null) {
+                    minioStorageService.deleteObject(page.getCleanedImageUrl());
+                }
+            }
+            chapterPageRepository.deleteAll(pages);
+        }
+        chapterRepository.deleteAll(chapters);
+        
+        comicRepository.delete(comic);
+        applicationEventPublisher.publishEvent(new ComicDeletedEvent(comicId));
+    }
+
+    @Transactional(readOnly = true)
     public BookOverviewDTO getBookOverview(Long comicId) {
         Comic comic = comicRepository.findById(comicId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
@@ -432,5 +477,15 @@ public class ComicService {
 
     public List<Category> getGenreList() {
         return categoryRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public int reindexAllComics() {
+        currentUserService.requireAdmin();
+        List<Comic> allComics = comicRepository.findAll();
+        for (Comic comic : allComics) {
+            applicationEventPublisher.publishEvent(new ComicSavedEvent(comic));
+        }
+        return allComics.size();
     }
 }

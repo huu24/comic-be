@@ -52,9 +52,45 @@ services:
       OTP_MAIL_FROM: "${OTP_MAIL_FROM:-no-reply@comic.local}"
       MAIL_USERNAME: "${MAIL_USERNAME}"
       MAIL_PASSWORD: "${MAIL_PASSWORD}"
+      SPRING_ELASTICSEARCH_URIS: "http://elasticsearch:9200"
+      SPRING_DATA_REDIS_HOST: "redis"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      ELASTICSEARCH_URIS: "http://elasticsearch:9200"
+      SERVER_PORT: "8080"
     depends_on:
       db:
         condition: service_healthy
       minio:
         condition: service_started
+      redis:
+        condition: service_started
+    restart: on-failure
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: comic_pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@example.com"
+      PGADMIN_DEFAULT_PASSWORD: "admin123"
+    depends_on:
+      - db
+    restart: on-failure
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    container_name: comic_elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    mem_limit: 1g
+    restart: on-failure
+
+  redis:
+    image: redis:7-alpine
     restart: on-failure

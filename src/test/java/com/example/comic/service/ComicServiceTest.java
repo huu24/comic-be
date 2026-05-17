@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.PageImpl;
@@ -46,6 +47,7 @@ class ComicServiceTest {
         private CategoryRepository categoryRepository;
         private CurrentUserService currentUserService;
         private MinioStorageService minioStorageService;
+        private ApplicationEventPublisher applicationEventPublisher;
         private ComicService comicService;
 
         @BeforeEach
@@ -55,8 +57,11 @@ class ComicServiceTest {
                 chapterPageRepository = mock(ChapterPageRepository.class);
                 comicRatingRepository = mock(ComicRatingRepository.class);
                 comicCategoryRepository = mock(ComicCategoryRepository.class);
+                categoryRepository = mock(CategoryRepository.class);
                 currentUserService = mock(CurrentUserService.class);
                 minioStorageService = mock(MinioStorageService.class);
+                when(minioStorageService.uploadComicCover(any(), any())).thenReturn("cover.png");
+                applicationEventPublisher = mock(ApplicationEventPublisher.class);
                 comicService = new ComicService(
                                 comicRepository,
                                 chapterRepository,
@@ -65,7 +70,8 @@ class ComicServiceTest {
                                 categoryRepository,
                                 comicCategoryRepository,
                                 currentUserService,
-                                minioStorageService);
+                                minioStorageService,
+                                applicationEventPublisher);
         }
 
         @Test
@@ -83,11 +89,11 @@ class ComicServiceTest {
                                                 .title("  One Piece  ")
                                                 .description("  Epic  ")
                                                 .author("  Oda  ")
-                                                .coverImageUrl("  cover.png  ")
                                                 .originalLanguage("  Japanese  ")
                                                 .format("  MANGA  ")
                                                 .status("  ACTIVE  ")
-                                                .build());
+                                                .build(),
+                                new MockMultipartFile("cover", "cover.png", "image/png", new byte[]{1}));
 
                 assertEquals(11L, response.getId());
                 assertEquals("One Piece", response.getTitle());
@@ -320,11 +326,11 @@ class ComicServiceTest {
                                                 .title(" Title ")
                                                 .description(null)
                                                 .author(null)
-                                                .coverImageUrl(null)
                                                 .originalLanguage(null)
                                                 .format(" WEBTOON ")
                                                 .status(null)
-                                                .build());
+                                                .build(),
+                                new MockMultipartFile("cover", "cover.png", "image/png", new byte[]{1}));
 
                 assertEquals(12L, response.getId());
                 assertEquals("Title", response.getTitle());
@@ -491,17 +497,18 @@ class ComicServiceTest {
                         comic.setId(13L);
                         return comic;
                 });
+                when(minioStorageService.uploadComicCover(any(), any())).thenReturn(null);
 
                 ComicCreateResponse response = comicService.createComic(
                                 ComicCreateRequest.builder()
                                                 .title(" Title ")
                                                 .description("   ")
                                                 .author("   ")
-                                                .coverImageUrl("   ")
                                                 .originalLanguage("   ")
                                                 .format(" MANGA ")
                                                 .status("   ")
-                                                .build());
+                                                .build(),
+                                new MockMultipartFile("cover", "cover.png", "image/png", new byte[]{1}));
 
                 assertEquals(null, response.getDescription());
                 assertEquals(null, response.getAuthor());

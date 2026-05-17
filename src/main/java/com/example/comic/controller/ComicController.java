@@ -2,7 +2,9 @@ package com.example.comic.controller;
 
 import com.example.comic.model.Category;
 import com.example.comic.model.dto.*;
-import com.example.comic.model.document.ComicDocument;
+import com.example.comic.model.dto.ComicDetailSearchResult;
+import com.example.comic.model.dto.ComicSearchResult;
+import com.example.comic.model.dto.ReindexResponse;
 import com.example.comic.service.ComicSearchService;
 import java.util.List;
 import com.example.comic.service.ComicService;
@@ -11,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,7 +21,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.web.multipart.MultipartFile;
@@ -69,6 +71,35 @@ public class ComicController {
                         .build());
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<DataResponse<List<ComicSearchResult>>> searchComics(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "10") int limit) {
+        return ResponseEntity.ok(
+                DataResponse.<List<ComicSearchResult>>builder()
+                        .data(comicSearchService.searchComics(keyword, limit))
+                        .build());
+    }
+
+    @GetMapping("/search/detail")
+    public ResponseEntity<DataResponse<List<ComicDetailSearchResult>>> searchComicsDetail(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "10") int limit) {
+        return ResponseEntity.ok(
+                DataResponse.<List<ComicDetailSearchResult>>builder()
+                        .data(comicSearchService.searchComicsDetail(keyword, limit))
+                        .build());
+    }
+
+    @PostMapping("/reindex")
+    public ResponseEntity<DataResponse<ReindexResponse>> reindexAllComics() {
+        int count = comicService.reindexAllComics();
+        return ResponseEntity.ok(
+                DataResponse.<ReindexResponse>builder()
+                        .data(ReindexResponse.builder().indexedCount(count).build())
+                        .build());
+    }
+
     @GetMapping
     public ResponseEntity<DataResponse<PageDataResponse<ComicSummaryResponse>>> getComics(
             @RequestParam(required = false) String keyword,
@@ -82,6 +113,12 @@ public class ComicController {
                         .<PageDataResponse<ComicSummaryResponse>>builder()
                         .data(comicService.getComics(keyword, categoryId, originalLanguage, comicStatus, page, size))
                         .build());
+    }
+
+    @DeleteMapping("/{comicId}")
+    public ResponseEntity<Void> deleteComic(@PathVariable Long comicId) {
+        comicService.deleteComic(comicId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{comicId}")
