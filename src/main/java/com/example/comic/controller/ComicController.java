@@ -115,6 +115,17 @@ public class ComicController {
                         .build());
     }
 
+    @GetMapping("/by-genre")
+    public ResponseEntity<DataResponse<PageDataResponse<ComicByGenreResponse>>> getComicsByGenre(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(
+                DataResponse
+                        .<PageDataResponse<ComicByGenreResponse>>builder()
+                        .data(comicService.getComicsByGenre(page, size))
+                        .build());
+    }
+
     @DeleteMapping("/{comicId}")
     public ResponseEntity<Void> deleteComic(@PathVariable Long comicId) {
         comicService.deleteComic(comicId);

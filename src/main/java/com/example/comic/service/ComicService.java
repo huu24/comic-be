@@ -171,6 +171,42 @@ public class ComicService {
     }
 
     @Transactional(readOnly = true)
+    public PageDataResponse<ComicByGenreResponse> getComicsByGenre(int page, int size) {
+        Pageable pageable = PageRequest.of(normalizePage(page), normalizeSize(size));
+        Page<Category> categories = categoryRepository.findAll(pageable);
+
+        List<ComicByGenreResponse> content = categories.getContent().stream()
+                .map(category -> {
+                    List<Object[]> comicData = comicCategoryRepository.findComicDataByCategoryId(category.getId());
+                    List<ComicGenreBookResponse> books = comicData.stream()
+                            .map(row -> ComicGenreBookResponse.builder()
+                                    .id(((Number) row[0]).longValue())
+                                    .title((String) row[1])
+                                    .author((String) row[2])
+                                    .coverImageUrl((String) row[3])
+                                    .averageRating(row[4] == null ? 0D : ((Number) row[4]).doubleValue())
+                                    .build())
+                            .toList();
+
+                    return ComicByGenreResponse.builder()
+                            .genre(category.getName())
+                            .books(books)
+                            .build();
+                })
+                .toList();
+
+        return PageDataResponse
+                .<ComicByGenreResponse>builder()
+                .content(content)
+                .pageNo(categories.getNumber())
+                .pageSize(categories.getSize())
+                .totalElements(categories.getTotalElements())
+                .totalPages(categories.getTotalPages())
+                .last(categories.isLast())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
     public ComicDetailResponse getComicDetail(Long comicId) {
         Comic comic = comicRepository.findById(comicId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));

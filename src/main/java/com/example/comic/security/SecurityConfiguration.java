@@ -49,6 +49,7 @@ public class SecurityConfiguration {
                         "/comics",
                         "/comics/*",
                         "/comics/search/detail",
+                        "/comics/by-genre",
                         "/comics/*/chapters",
                         "/chapters/*/pages",
                         "comics/*/book-overview",

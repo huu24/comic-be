@@ -16,4 +16,13 @@ public interface ComicCategoryRepository extends JpaRepository<ComicCategory, Co
 
     @Query("SELECT c.name FROM Category c JOIN ComicCategory cc ON c.id = cc.categoryId WHERE cc.comicId = :comicId")
     List<String> findCategoryNamesByComicId(@Param("comicId") Long comicId);
+
+    @Query(value = """
+        SELECT c.id, c.title, c.author, c.cover_image_url, c.average_rating
+        FROM comics c
+        JOIN comic_categories cc ON c.id = cc.comic_id
+        WHERE cc.category_id = :categoryId
+        ORDER BY c.title
+        """, nativeQuery = true)
+    List<Object[]> findComicDataByCategoryId(@Param("categoryId") Long categoryId);
 }
