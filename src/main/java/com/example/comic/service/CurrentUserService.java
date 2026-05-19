@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,17 +21,13 @@ public class CurrentUserService {
 
     public User requireUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (
-            authentication == null ||
-            !authentication.isAuthenticated() ||
-            authentication instanceof AnonymousAuthenticationToken ||
-            authentication.getName() == null
-        ) {
+        String email = getEmail(authentication);
+        if (email == null) {
             throw new UnauthenticatedException("Vui lòng đăng nhập để sử dụng tính năng này.");
         }
 
         return userRepository
-            .findByEmail(authentication.getName())
+            .findByEmail(email)
             .orElseThrow(() -> new UnauthenticatedException("Vui lòng đăng nhập để sử dụng tính năng này."));
     }
 
@@ -43,34 +41,48 @@ public class CurrentUserService {
 
     public UserRole resolveRole() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (
-            authentication == null ||
-            !authentication.isAuthenticated() ||
-            authentication instanceof AnonymousAuthenticationToken ||
-            authentication.getName() == null
-        ) {
+        String email = getEmail(authentication);
+        if (email == null) {
             return UserRole.GUEST;
         }
 
         return userRepository
-            .findByEmail(authentication.getName())
+            .findByEmail(email)
             .map(User::getRole)
             .orElse(UserRole.GUEST);
     }
 
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        String email = getEmail(authentication);
+        if (email == null) {
+            return null;
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof User) {
+            return (User) principal;
+        }
+        return userRepository.findByEmail(email).orElse(null);
+    }
+
+    private String getEmail(Authentication authentication) {
         if (
             authentication == null ||
             !authentication.isAuthenticated() ||
-            authentication instanceof AnonymousAuthenticationToken ||
-            authentication.getName() == null
+            authentication instanceof AnonymousAuthenticationToken
         ) {
             return null;
         }
 
-        return userRepository
-            .findByEmail(authentication.getName())
-            .orElse(null);
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserDetails) {
+            return ((UserDetails) principal).getUsername();
+        } else if (principal instanceof OAuth2User) {
+            return ((OAuth2User) principal).getAttribute("email");
+        }
+
+        return authentication.getName();
     }
 }
