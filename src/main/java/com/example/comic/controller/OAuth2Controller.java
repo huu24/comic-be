@@ -16,14 +16,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class OAuth2Controller {
 
     @GetMapping("/providers")
-    public ResponseEntity<DataResponse<List<OAuth2ProviderResponse>>> getProviders(
-            HttpServletRequest request) {
-        String contextPath = request.getContextPath();
+    public ResponseEntity<DataResponse<List<OAuth2ProviderResponse>>> getProviders() {
         List<OAuth2ProviderResponse> providers = List.of(
                 OAuth2ProviderResponse.builder()
                         .provider("google")
                         .displayName("Google")
-                        .authorizationUrl(contextPath + "/oauth2/authorization/google")
+                        .authorizationUrl("/oauth2/authorization/google")
                         .build());
         return ResponseEntity.ok(
                 DataResponse.<List<OAuth2ProviderResponse>>builder().data(providers).build());

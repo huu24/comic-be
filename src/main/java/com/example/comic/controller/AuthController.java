@@ -1,5 +1,6 @@
 package com.example.comic.controller;
 
+import com.example.comic.model.User;
 import com.example.comic.model.dto.AuthResponse;
 import com.example.comic.model.dto.AuthMeResponse;
 import com.example.comic.model.dto.LoginRequest;
@@ -33,7 +34,18 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<AuthMeResponse> me() {
-        return ResponseEntity.ok(AuthMeResponse.builder().role(currentUserService.resolveRole().name()).build());
+        User user = currentUserService.getCurrentUser();
+        if (user == null) {
+            return ResponseEntity.ok(AuthMeResponse.builder()
+                    .role(currentUserService.resolveRole().name())
+                    .build());
+        }
+        return ResponseEntity.ok(AuthMeResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .role(user.getRole().name())
+                .build());
     }
 
     @PostMapping("/register")

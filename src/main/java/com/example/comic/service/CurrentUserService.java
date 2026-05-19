@@ -57,4 +57,20 @@ public class CurrentUserService {
             .map(User::getRole)
             .orElse(UserRole.GUEST);
     }
+
+    public User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (
+            authentication == null ||
+            !authentication.isAuthenticated() ||
+            authentication instanceof AnonymousAuthenticationToken ||
+            authentication.getName() == null
+        ) {
+            return null;
+        }
+
+        return userRepository
+            .findByEmail(authentication.getName())
+            .orElse(null);
+    }
 }

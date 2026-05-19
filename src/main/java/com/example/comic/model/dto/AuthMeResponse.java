@@ -11,5 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AuthMeResponse {
 
+    private Long id;
+    private String email;
+    private String fullName;
     private String role;
 }
