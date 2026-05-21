@@ -19,7 +19,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query(
         """
         SELECT u FROM User u
-        WHERE (:keyword IS NULL OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        WHERE (CAST(:keyword AS string) IS NULL OR LOWER(u.email) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
         ORDER BY u.createdAt DESC
         """
     )

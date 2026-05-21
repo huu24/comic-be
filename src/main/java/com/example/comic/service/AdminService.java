@@ -42,6 +42,7 @@ public class AdminService {
     @Transactional(readOnly = true)
     public PageDataResponse<AdminUserSummaryResponse> getUsers(String keyword, int page, int size) {
         currentUserService.requireAdmin();
+        System.out.println("keyword: " + keyword);
 
         Pageable pageable = PageRequest.of(normalizePage(page), normalizeSize(size));
         Page<User> users = userRepository.searchByKeyword(normalizeKeyword(keyword), pageable);
