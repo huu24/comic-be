@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ReadingHistoryResponse {
     private Long comicId;
-    private Long chapterId;
+    private Integer chapterNumber;
     private Integer lastPageRead;
     private Instant updatedAt;
 }

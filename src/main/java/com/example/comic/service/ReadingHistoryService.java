@@ -1,12 +1,14 @@
 package com.example.comic.service;
 
 import com.example.comic.exception.NotFoundException;
+import com.example.comic.model.Chapter;
 import com.example.comic.model.ReadingHistory;
 import com.example.comic.model.User;
 import com.example.comic.model.dto.MessageStatusResponse;
 import com.example.comic.model.dto.MessageResponse;
 import com.example.comic.model.dto.ReadingHistoryResponse;
 import com.example.comic.model.dto.ReadingHistorySyncRequest;
+import com.example.comic.repository.ChapterRepository;
 import com.example.comic.repository.ReadingHistoryRepository;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ public class ReadingHistoryService {
 
     private final ReadingHistoryRepository readingHistoryRepository;
     private final CurrentUserService currentUserService;
+    private final ChapterRepository chapterRepository;
 
     @Transactional(readOnly = true)
     public ReadingHistoryResponse getByComicId(Long comicId) {
@@ -26,11 +29,14 @@ public class ReadingHistoryService {
         ReadingHistory history = readingHistoryRepository
             .findByUserIdAndComicId(user.getId(), comicId)
             .orElseThrow(() -> new NotFoundException("Chưa có lịch sử đọc cho bộ truyện này."));
+        Chapter chapter = chapterRepository
+        .findById(history.getChapterId())
+        .orElseThrow(() -> new NotFoundException("Không tìm thấy Chapter ID: " + history.getChapterId() + " trong hệ thống."));
 
         return ReadingHistoryResponse
             .builder()
             .comicId(history.getComicId())
-            .chapterId(history.getChapterId())
+            .chapterNumber(chapter.getChapterNumber())
             .lastPageRead(history.getLastPageRead())
             .updatedAt(history.getUpdatedAt())
             .build();
