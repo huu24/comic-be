@@ -72,7 +72,6 @@ services:
         condition: service_started
       redis:
         condition: service_started
-    restart: on-failure
     networks:
       - comic-network
 
