@@ -81,6 +81,7 @@ public class LibraryService {
             .build();
     }
 
+    @Transactional
     public void upsertLibrary(UserLibraryUpsertRequest request) {
         User user = currentUserService.requireUser();
         comicRepository.findById(request.getComicId()).orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
@@ -94,6 +95,7 @@ public class LibraryService {
         userLibraryRepository.save(library);
     }
 
+    @Transactional
     public void removeFromLibrary(Long comicId) {
         User user = currentUserService.requireUser();
         userLibraryRepository.deleteByUserIdAndComicId(user.getId(), comicId);
