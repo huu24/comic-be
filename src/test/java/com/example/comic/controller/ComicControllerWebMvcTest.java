@@ -130,7 +130,7 @@ class ComicControllerWebMvcTest {
             .perform(
                 put("/comics/1/ratings")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(java.util.Map.of("score", 11)))
+                    .content(objectMapper.writeValueAsString(java.util.Map.of("score", 6)))
             )
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error.status").value("INVALID_ARGUMENT"));
@@ -138,18 +138,18 @@ class ComicControllerWebMvcTest {
 
     @Test
     void rateComic_shouldReturnSuccessResponse() throws Exception {
-        when(comicService.rateComic(1L, 8)).thenReturn(ComicRatingResponse.builder().newAverageRating(4.5).totalRatings(100L).build());
+        when(comicService.rateComic(1L, 4)).thenReturn(ComicRatingResponse.builder().newAverageRating(4.5).totalRatings(100L).build());
 
         mockMvc
             .perform(
                 put("/comics/1/ratings")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(java.util.Map.of("score", 8)))
+                    .content(objectMapper.writeValueAsString(java.util.Map.of("score", 4)))
             )
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.message").value("Đánh giá thành công."))
             .andExpect(jsonPath("$.data.newAverageRating").value(4.5));
 
-        verify(comicService).rateComic(eq(1L), eq(8));
+        verify(comicService).rateComic(eq(1L), eq(4));
     }
 }

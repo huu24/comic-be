@@ -38,6 +38,7 @@ public class ComicService {
     private final ComicRatingRepository comicRatingRepository;
     private final CategoryRepository categoryRepository;
     private final ComicCategoryRepository comicCategoryRepository;
+    private final ChapterCommentRepository chapterCommentRepository;
     private final CurrentUserService currentUserService;
     private final MinioStorageService minioStorageService;
     private final ApplicationEventPublisher applicationEventPublisher;
@@ -88,6 +89,73 @@ public class ComicService {
         }
 
         applicationEventPublisher.publishEvent(new ComicSavedEvent(savedComic));
+        return ComicCreateResponse
+                .builder()
+                .id(savedComic.getId())
+                .title(savedComic.getTitle())
+                .description(savedComic.getDescription())
+                .author(savedComic.getAuthor())
+                .coverImageUrl(savedComic.getCoverImageUrl())
+                .originalLanguage(savedComic.getOriginalLanguage())
+                .format(savedComic.getFormat())
+                .status(savedComic.getStatus())
+                .build();
+    }
+
+    @Transactional
+    public ComicCreateResponse updateComic(Long comicId, ComicCreateRequest request, MultipartFile coverImage) {
+        currentUserService.requireAdmin();
+
+        Comic comic = comicRepository.findById(comicId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
+
+        if (request.getTitle() == null || request.getTitle().isBlank()) {
+            throw new IllegalArgumentException("Tên truyện là bắt buộc.");
+        }
+        if (request.getFormat() == null || request.getFormat().isBlank()) {
+            throw new IllegalArgumentException("Định dạng truyện là bắt buộc.");
+        }
+
+        comic.setTitle(request.getTitle().trim());
+        comic.setDescription(trimToNull(request.getDescription()));
+        comic.setAuthor(trimToNull(request.getAuthor()));
+        comic.setOriginalLanguage(trimToNull(request.getOriginalLanguage()));
+        comic.setFormat(request.getFormat().trim());
+        if (request.getStatus() != null && !request.getStatus().isBlank()) {
+            comic.setStatus(request.getStatus().trim());
+        }
+
+        if (coverImage != null && !coverImage.isEmpty()) {
+            validateUploadFile(coverImage);
+            if (comic.getCoverImageUrl() != null && !comic.getCoverImageUrl().isBlank()) {
+                try {
+                    minioStorageService.deleteObject(comic.getCoverImageUrl());
+                } catch (Exception ex) {
+                }
+            }
+            String coverUrl = minioStorageService.uploadComicCover(comicId, coverImage);
+            comic.setCoverImageUrl(coverUrl);
+        }
+
+        Comic savedComic = comicRepository.save(comic);
+
+        // Update genres
+        if (request.getGenres() != null) {
+            comicCategoryRepository.deleteByComicId(comicId);
+            List<Long> genres = request.getGenres();
+            if (!genres.isEmpty()) {
+                List<ComicCategory> comicCategories = genres.stream()
+                        .filter(id -> categoryRepository.existsById(id))
+                        .map(id -> ComicCategory.builder().comicId(comicId).categoryId(id).build())
+                        .toList();
+                if (!comicCategories.isEmpty()) {
+                    comicCategoryRepository.saveAll(comicCategories);
+                }
+            }
+        }
+
+        applicationEventPublisher.publishEvent(new ComicSavedEvent(savedComic));
+
         return ComicCreateResponse
                 .builder()
                 .id(savedComic.getId())
@@ -464,6 +532,27 @@ public class ComicService {
                 .cleanedImageUrl(minioStorageService.resolvePublicUrl(page.getCleanedImageUrl()))
                 .originalMetadataUrl(minioStorageService.resolvePublicUrl(page.getOriginalMetadataUrl()))
                 .build();
+    }
+
+    @Transactional
+    public void deleteChapter(Long chapterId) {
+        currentUserService.requireAdmin();
+
+        Chapter chapter = chapterRepository.findById(chapterId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy chương truyện."));
+
+        List<ChapterPage> pages = chapterPageRepository.findByChapterIdOrderByPageNumberAsc(chapterId);
+        for (ChapterPage page : pages) {
+            if (page.getImageUrl() != null) {
+                minioStorageService.deleteObject(page.getImageUrl());
+            }
+            if (page.getCleanedImageUrl() != null) {
+                minioStorageService.deleteObject(page.getCleanedImageUrl());
+            }
+        }
+        chapterPageRepository.deleteByChapterId(chapterId);
+        chapterCommentRepository.deleteByChapterId(chapterId);
+        chapterRepository.delete(chapter);
     }
 
     @Transactional

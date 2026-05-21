@@ -61,6 +61,34 @@ public class ComicController {
                         .build());
     }
 
+    @PutMapping(value = "/{comicId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<DataResponse<ComicCreateResponse>> updateComic(
+            @PathVariable Long comicId,
+            @RequestParam("title") String title,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "author", required = true) String author,
+            @RequestParam(value = "originalLanguage", required = true) String originalLanguage,
+            @RequestParam("format") String format,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "genres", required = false) List<Long> genres,
+            @RequestParam(value = "coverImage", required = false) MultipartFile coverImage) {
+
+        ComicCreateRequest request = ComicCreateRequest.builder()
+                .title(title)
+                .description(description)
+                .author(author)
+                .originalLanguage(originalLanguage)
+                .format(format)
+                .status(status)
+                .genres(genres)
+                .build();
+
+        return ResponseEntity.ok(
+                DataResponse.<ComicCreateResponse>builder()
+                        .data(comicService.updateComic(comicId, request, coverImage))
+                        .build());
+    }
+
     @PostMapping("/{comicId}/chapters")
     public ResponseEntity<DataResponse<ChapterCreateResponse>> createChapter(
             @PathVariable Long comicId,

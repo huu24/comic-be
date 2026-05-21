@@ -10,4 +10,6 @@ public interface ChapterCommentRepository extends JpaRepository<ChapterComment, 
     Page<ChapterComment> findByChapterIdAndParentIdIsNullOrderByCreatedAtDesc(Long chapterId, Pageable pageable);
 
     List<ChapterComment> findByParentIdInOrderByCreatedAtAsc(List<Long> parentIds);
+
+    void deleteByChapterId(Long chapterId);
 }

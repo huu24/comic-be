@@ -15,9 +15,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ComicRatingRequest {
 
-    @Schema(example = "8")
+    @Schema(example = "4")
     @NotNull(message = "score là bắt buộc.")
-    @Min(value = 1, message = "score phải từ 1 đến 10.")
-    @Max(value = 10, message = "score phải từ 1 đến 10.")
+    @Min(value = 1, message = "score phải từ 1 đến 5.")
+    @Max(value = 5, message = "score phải từ 1 đến 5.")
     private Integer score;
 }

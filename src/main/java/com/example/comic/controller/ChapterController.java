@@ -90,4 +90,10 @@ public class ChapterController {
             .status(HttpStatus.CREATED)
             .body(DataResponse.<ChapterCommentResponse>builder().data(chapterCommentService.create(chapterId, request)).build());
     }
+
+    @DeleteMapping("/{chapterId}")
+    public ResponseEntity<Void> deleteChapter(@PathVariable Long chapterId) {
+        comicService.deleteChapter(chapterId);
+        return ResponseEntity.noContent().build();
+    }
 }
