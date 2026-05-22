@@ -63,7 +63,21 @@ public class ReadingHistoryService {
             return MessageResponse.builder().message("Tiến độ đọc đã được lưu.").build();
         }
 
-        if (clientTime.isAfter(history.getUpdatedAt())) {
+        Chapter clientChapter = chapterRepository.findById(request.getChapterId())
+            .orElseThrow(() -> new NotFoundException("Không tìm thấy Chapter ID: " + request.getChapterId() + " trong hệ thống."));
+        Chapter serverChapter = chapterRepository.findById(history.getChapterId())
+            .orElseThrow(() -> new NotFoundException("Không tìm thấy Chapter ID: " + history.getChapterId() + " trong hệ thống."));
+
+        if (
+            clientTime.isAfter(history.getUpdatedAt())
+            && (
+                clientChapter.getChapterNumber() > serverChapter.getChapterNumber()
+                || (
+                    clientChapter.getChapterNumber() == serverChapter.getChapterNumber()
+                    && request.getLastPageRead() > history.getLastPageRead()
+                )
+            )
+        ) {
             history.setChapterId(request.getChapterId());
             history.setLastPageRead(request.getLastPageRead());
             history.setUpdatedAt(clientTime);
