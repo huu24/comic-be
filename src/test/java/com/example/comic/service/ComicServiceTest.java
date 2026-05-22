@@ -53,6 +53,7 @@ class ComicServiceTest {
         private ApplicationEventPublisher applicationEventPublisher;
         private PipelineProducerService pipelineProducerService;
         private UserLibraryRepository userLibraryRepository;
+        private ReadingHistoryRepository readingHistoryRepository;
         private ComicService comicService;
 
         @BeforeEach
@@ -72,6 +73,7 @@ class ComicServiceTest {
                 applicationEventPublisher = mock(ApplicationEventPublisher.class);
                 pipelineProducerService = mock(PipelineProducerService.class);
                 userLibraryRepository = mock(UserLibraryRepository.class);
+                readingHistoryRepository = mock(ReadingHistoryRepository.class);
                 
                 comicService = new ComicService(
                                 comicRepository,
@@ -85,7 +87,8 @@ class ComicServiceTest {
                                 minioStorageService,
                                 applicationEventPublisher,
                                 pipelineProducerService,
-                                userLibraryRepository);
+                                userLibraryRepository,
+                                readingHistoryRepository);
         }
 
         @Test

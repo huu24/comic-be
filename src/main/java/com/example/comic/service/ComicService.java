@@ -45,6 +45,7 @@ public class ComicService {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final PipelineProducerService pipelineProducerService;
     private final UserLibraryRepository userLibraryRepository;
+    private final ReadingHistoryRepository readingHistoryRepository;
 
     @Transactional
     public ComicCreateResponse createComic(ComicCreateRequest request, MultipartFile coverImage) {
@@ -594,6 +595,8 @@ public class ComicService {
             }
             chapterPageRepository.deleteAll(pages);
         }
+        readingHistoryRepository.deleteByComicId(comicId);
+        userLibraryRepository.deleteByComicId(comicId);
         chapterRepository.deleteAll(chapters);
         
         comicRepository.delete(comic);

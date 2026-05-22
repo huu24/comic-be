@@ -16,4 +16,6 @@ public interface UserLibraryRepository extends JpaRepository<UserLibrary, UserLi
     Optional<UserLibrary> findByUserIdAndComicId(Long userId, Long comicId);
 
     void deleteByUserIdAndComicId(Long userId, Long comicId);
+
+    void deleteByComicId(Long comicId);
 }

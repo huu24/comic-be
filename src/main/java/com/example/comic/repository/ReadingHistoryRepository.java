@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ReadingHistoryRepository extends JpaRepository<ReadingHistory, ReadingHistoryId> {
     Optional<ReadingHistory> findByUserIdAndComicId(Long userId, Long comicId);
+
+    void deleteByComicId(Long comicId);
 }
