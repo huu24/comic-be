@@ -50,7 +50,10 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
+        AuthResponse response = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Set-Cookie", authCookieService.buildTokenCookie(response.getToken()))
+                .body(response);
     }
 
     @PostMapping("/register-otp")
@@ -60,7 +63,10 @@ public class AuthController {
 
     @PostMapping("/verify-email-otp")
     public ResponseEntity<AuthResponse> verifyEmailOtp(@Valid @RequestBody VerifyEmailOtpRequest request) {
-        return ResponseEntity.ok(authService.verifyEmailOtp(request));
+        AuthResponse response = authService.verifyEmailOtp(request);
+        return ResponseEntity.ok()
+                .header("Set-Cookie", authCookieService.buildTokenCookie(response.getToken()))
+                .body(response);
     }
 
     @PostMapping("/resend-email-otp")
@@ -70,7 +76,10 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+        AuthResponse response = authService.login(request);
+        return ResponseEntity.ok()
+                .header("Set-Cookie", authCookieService.buildTokenCookie(response.getToken()))
+                .body(response);
     }
 
     @PostMapping("/logout")
