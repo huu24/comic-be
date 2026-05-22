@@ -166,15 +166,25 @@ public class MinioStorageService {
         if (urlOrPath == null || urlOrPath.isBlank()) {
             return urlOrPath;
         }
-        String path = urlOrPath;
+        String path = urlOrPath.trim();
         if (publicBaseUrl != null && !publicBaseUrl.isBlank() && path.startsWith(publicBaseUrl)) {
             path = path.substring(publicBaseUrl.length());
         } else if (internalBaseUrl != null && !internalBaseUrl.isBlank() && path.startsWith(internalBaseUrl)) {
             path = path.substring(internalBaseUrl.length());
         }
-        if (path.startsWith("/comic")) {
+        
+        while (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        
+        if (path.startsWith("comic/")) {
             path = path.substring(6);
         }
+        
+        while (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        
         log.info("extracted path " + path + " from url " + urlOrPath);
         return path;
     }

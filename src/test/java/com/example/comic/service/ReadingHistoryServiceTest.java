@@ -84,8 +84,12 @@ class ReadingHistoryServiceTest {
     void sync_shouldIgnoreOlderClientTime() {
         User user = user(1L);
         ReadingHistory history = ReadingHistory.builder().userId(1L).comicId(10L).chapterId(5L).lastPageRead(12).updatedAt(Instant.parse("2025-01-02T00:00:00Z")).build();
+        com.example.comic.model.Chapter clientChapter = com.example.comic.model.Chapter.builder().id(6L).chapterNumber(4).build();
+        com.example.comic.model.Chapter serverChapter = com.example.comic.model.Chapter.builder().id(5L).chapterNumber(3).build();
         when(currentUserService.requireUser()).thenReturn(user);
         when(readingHistoryRepository.findByUserIdAndComicId(1L, 10L)).thenReturn(Optional.of(history));
+        when(chapterRepository.findById(6L)).thenReturn(Optional.of(clientChapter));
+        when(chapterRepository.findById(5L)).thenReturn(Optional.of(serverChapter));
 
         Object response = readingHistoryService.sync(
             ReadingHistorySyncRequest.builder()
@@ -113,8 +117,12 @@ class ReadingHistoryServiceTest {
     void sync_shouldUpdateWhenClientTimeIsNewer() {
         User user = user(1L);
         ReadingHistory history = ReadingHistory.builder().userId(1L).comicId(10L).chapterId(5L).lastPageRead(12).updatedAt(Instant.parse("2025-01-01T00:00:00Z")).build();
+        com.example.comic.model.Chapter clientChapter = com.example.comic.model.Chapter.builder().id(6L).chapterNumber(4).build();
+        com.example.comic.model.Chapter serverChapter = com.example.comic.model.Chapter.builder().id(5L).chapterNumber(3).build();
         when(currentUserService.requireUser()).thenReturn(user);
         when(readingHistoryRepository.findByUserIdAndComicId(1L, 10L)).thenReturn(Optional.of(history));
+        when(chapterRepository.findById(6L)).thenReturn(Optional.of(clientChapter));
+        when(chapterRepository.findById(5L)).thenReturn(Optional.of(serverChapter));
         when(readingHistoryRepository.save(any(ReadingHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Object response = readingHistoryService.sync(

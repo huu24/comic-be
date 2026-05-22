@@ -15,6 +15,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +27,7 @@ public class PageService {
     private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "pageDetail", key = "{#pageId, #lang}")
     public PageDetailResponse getPageDetail(Long pageId, String lang) {
         ChapterPage page = chapterPageRepository
                 .findById(pageId)

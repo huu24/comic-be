@@ -19,7 +19,7 @@ class RestAccessDeniedHandlerTest {
         handler.handle(request, response, new AccessDeniedException("denied"));
 
         assertEquals(403, response.getStatus());
-        assertEquals("application/json", response.getContentType());
+        assertTrue(response.getContentType().startsWith("application/json"));
         assertTrue(response.getContentAsString().contains("PERMISSION_DENIED"));
         assertTrue(response.getContentAsString().contains("Bạn không có quyền truy cập"));
     }

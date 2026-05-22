@@ -204,4 +204,23 @@ class ChapterCommentServiceTest {
         assertEquals(600L, response.getId());
         assertEquals(200L, response.getParentId());
     }
+
+    @Test
+    void create_shouldRejectReplyToReply() {
+        User current = User.builder().id(1L).email("user@example.com").fullName("User").build();
+        Chapter chapter = Chapter.builder().id(10L).comicId(1L).build();
+        ChapterComment parentReply = ChapterComment.builder().id(200L).chapterId(10L).userId(2L).parentId(100L).content("Parent Reply").build();
+
+        when(currentUserService.requireUser()).thenReturn(current);
+        when(chapterRepository.findById(10L)).thenReturn(Optional.of(chapter));
+        when(chapterCommentRepository.findById(200L)).thenReturn(Optional.of(parentReply));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> chapterCommentService.create(
+                10L,
+                ChapterCommentCreateRequest.builder().content("nested reply").parentId(200L).build()
+            )
+        );
+    }
 }

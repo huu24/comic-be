@@ -86,9 +86,12 @@ public class ChapterCommentService {
         chapterRepository.findById(chapterId).orElseThrow(() -> new NotFoundException("Không tìm thấy chương truyện."));
 
         if (request.getParentId() != null) {
-            chapterCommentRepository
+            ChapterComment parent = chapterCommentRepository
                 .findById(request.getParentId())
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy bình luận cha."));
+            if (parent.getParentId() != null) {
+                throw new IllegalArgumentException("Không thể phản hồi bình luận đã là phản hồi (giới hạn 2 cấp bình luận).");
+            }
         }
 
         ChapterComment saved = chapterCommentRepository.save(

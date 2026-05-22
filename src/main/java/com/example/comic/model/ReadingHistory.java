@@ -48,9 +48,4 @@ public class ReadingHistory {
             updatedAt = Instant.now();
         }
     }
-
-    @PreUpdate
-    public void onUpdate() {
-        updatedAt = Instant.now();
-    }
 }

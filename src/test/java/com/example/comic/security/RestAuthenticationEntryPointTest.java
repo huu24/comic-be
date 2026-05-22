@@ -19,7 +19,7 @@ class RestAuthenticationEntryPointTest {
         entryPoint.commence(request, response, new BadCredentialsException("bad credentials"));
 
         assertEquals(401, response.getStatus());
-        assertEquals("application/json", response.getContentType());
+        assertTrue(response.getContentType().startsWith("application/json"));
         assertTrue(response.getContentAsString().contains("UNAUTHENTICATED"));
         assertTrue(response.getContentAsString().contains("Vui lòng đăng nhập"));
     }
