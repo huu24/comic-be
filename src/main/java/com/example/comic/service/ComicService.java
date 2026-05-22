@@ -312,6 +312,7 @@ public class ComicService {
                         .chapterNumber(ch.getChapterNumber())
                         .title(ch.getTitle())
                         .createdAt(ch.getCreatedAt())
+                        .totalPages((int) chapterPageRepository.countByChapterId(ch.getId()))
                         .build())
                 .toList();
 
@@ -610,6 +611,7 @@ public class ComicService {
                                 .id(chapter.getId())
                                 .chapterNumber(chapter.getChapterNumber())
                                 .createdAt(chapter.getCreatedAt())
+                                .totalPages((int) chapterPageRepository.countByChapterId(chapter.getId()))
                                 .build()
                         ).collect(Collectors.toList()))
                 .build();

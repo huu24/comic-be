@@ -15,4 +15,5 @@ public class ChapterSummaryResponse {
     private Integer chapterNumber;
     private String title;
     private Instant createdAt;
+    private Integer totalPages;
 }

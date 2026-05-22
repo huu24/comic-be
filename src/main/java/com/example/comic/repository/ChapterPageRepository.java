@@ -12,4 +12,6 @@ public interface ChapterPageRepository extends JpaRepository<ChapterPage, Long> 
     boolean existsByChapterIdAndPageNumberBetween(Long chapterId, Integer startPageNumber, Integer endPageNumber);
 
     void deleteByChapterId(Long chapterId);
+
+    long countByChapterId(Long chapterId);
 }
