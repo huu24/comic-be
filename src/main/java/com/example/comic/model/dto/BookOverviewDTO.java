@@ -21,6 +21,7 @@ public class BookOverviewDTO {
     private String description;
     private Double averageRating;
     private Integer totalRatings;
+    private String libraryType;
     private List<ChapterSummaryResponse> chapters = new ArrayList<>();
 }
 

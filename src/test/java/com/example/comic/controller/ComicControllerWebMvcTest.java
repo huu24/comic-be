@@ -64,6 +64,8 @@ class ComicControllerWebMvcTest {
                 multipart("/comics")
                     .file("coverImage", "cover.png".getBytes())
                     .param("title", "One Piece")
+                    .param("author", "Eiichiro Oda")
+                    .param("originalLanguage", "Japanese")
                     .param("format", "MANGA")
                     .param("status", "ACTIVE")
             )

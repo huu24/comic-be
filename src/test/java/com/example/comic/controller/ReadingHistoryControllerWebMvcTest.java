@@ -47,13 +47,13 @@ class ReadingHistoryControllerWebMvcTest {
     @Test
     void getByComicId_shouldReturnDataResponse() throws Exception {
         when(readingHistoryService.getByComicId(1L))
-            .thenReturn(ReadingHistoryResponse.builder().comicId(1L).chapterId(3L).lastPageRead(9).updatedAt(Instant.now()).build());
+            .thenReturn(ReadingHistoryResponse.builder().comicId(1L).chapterNumber(3).lastPageRead(9).updatedAt(Instant.now()).build());
 
         mockMvc
             .perform(get("/reading-histories/comics/1"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.comicId").value(1))
-            .andExpect(jsonPath("$.data.chapterId").value(3));
+            .andExpect(jsonPath("$.data.chapterNumber").value(3));
     }
 
     @Test

@@ -47,7 +47,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String token = authResponse.getToken();
 
         response.addHeader("Set-Cookie", authCookieService.buildTokenCookie(token));
-        response.sendRedirect(successRedirectUrl);
+        response.sendRedirect(successRedirectUrl + "?token=" + token);
     }
 
     private String getStringClaim(OAuth2User oauth2User, String key) {

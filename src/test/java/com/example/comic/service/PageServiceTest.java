@@ -94,10 +94,10 @@ class PageServiceTest {
         when(pageTranslationRepository.findByPageIdAndLang(1L, "vi")).thenReturn(Optional.of(translation));
         when(minioStorageService.downloadObjectAsString("metadata/original.json"))
                 .thenReturn(
-                        "{\"page_id\":\"page_01\",\"bubbles\":[{\"id\":1,\"original_text\":\"えー\",\"chunks\":[]}]}");
+                        "{\"page_id\":\"page_01\",\"bubbles\":[{\"id\":1,\"original_text\":\"えー\",\"chunks\":[{\"chunk_id\":\"c1\",\"text\":\"えー\"}]}]}");
         when(minioStorageService.downloadObjectAsString("metadata/translation_vi.json"))
                 .thenReturn(
-                        "{\"page_id\":\"page_01\",\"bubbles\":[{\"id\":1,\"full_translation\":\"À này\",\"chunk_meanings\":[{\"c1\":\"À thì\"}]}]}");
+                        "{\"page_id\":\"page_01\",\"bubbles\":[{\"id\":1,\"full_translation\":\"À này\",\"chunk_meanings\":[{\"chunk_id\":\"c1\",\"meaning\":\"À thì\",\"type\":\"interjection\"}]}]}");
         when(minioStorageService.resolvePublicUrl("pages/1.png")).thenReturn("http://cdn/pages/1.png");
         when(minioStorageService.resolvePublicUrl("cleaned/1.png")).thenReturn("http://cdn/cleaned/1.png");
 
@@ -106,7 +106,11 @@ class PageServiceTest {
         assertNotNull(response.getBubbles());
         assertEquals(1, response.getBubbles().size());
         assertEquals("À này", response.getBubbles().get(0).get("full_translation").asText());
-        assertNotNull(response.getBubbles().get(0).get("chunk_meanings"));
+        JsonNode chunks = response.getBubbles().get(0).get("chunks");
+        assertNotNull(chunks);
+        assertEquals(1, chunks.size());
+        assertEquals("À thì", chunks.get(0).get("meaning").asText());
+        assertEquals("interjection", chunks.get(0).get("type").asText());
         // original fields preserved
         assertEquals("えー", response.getBubbles().get(0).get("original_text").asText());
     }
@@ -185,16 +189,16 @@ class PageServiceTest {
 
         @Test
         void mergeBubbles_shouldHandleNonArrayInvalidIdAndFieldCombinations() throws Exception {
-                ArrayNode original = (ArrayNode) objectMapper.readTree("[{\"id\":1,\"original_text\":\"A\"},2,{\"id\":3,\"original_text\":\"C\"}]");
-                JsonNode translation = objectMapper.readTree("[{\"id\":-1,\"full_translation\":\"ignored\"},{\"id\":1},{\"id\":3,\"chunk_meanings\":[\"x\"]}]");
+                ArrayNode original = (ArrayNode) objectMapper.readTree("[{\"id\":1,\"original_text\":\"A\"},2,{\"id\":3,\"original_text\":\"C\",\"chunks\":[{\"chunk_id\":\"c3\"}]}]");
+                JsonNode translation = objectMapper.readTree("[{\"id\":-1,\"full_translation\":\"ignored\"},{\"id\":1},{\"id\":3,\"chunk_meanings\":[{\"chunk_id\":\"c3\",\"meaning\":\"x\"}]}]");
 
                 pageService.mergeBubbles(original, null);
                 pageService.mergeBubbles(original, objectMapper.readTree("{}"));
                 pageService.mergeBubbles(original, translation);
 
                 assertNull(original.get(0).get("full_translation"));
-                assertNull(original.get(0).get("chunk_meanings"));
-                assertEquals("x", original.get(2).get("chunk_meanings").get(0).asText());
+                assertNull(original.get(0).get("chunks"));
+                assertEquals("x", original.get(2).get("chunks").get(0).get("meaning").asText());
         }
 
         @Test

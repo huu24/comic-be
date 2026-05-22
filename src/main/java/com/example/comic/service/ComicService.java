@@ -10,6 +10,7 @@ import com.example.comic.repository.*;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,7 @@ public class ComicService {
     private final MinioStorageService minioStorageService;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final PipelineProducerService pipelineProducerService;
+    private final UserLibraryRepository userLibraryRepository;
 
     @Transactional
     public ComicCreateResponse createComic(ComicCreateRequest request, MultipartFile coverImage) {
@@ -342,6 +344,12 @@ public class ComicService {
 
     @Transactional
     public List<ChapterPageResponse> uploadChapterPages(Long chapterId, int startPageNumber,
+            List<MultipartFile> files) {
+        return uploadChapterPages(chapterId, startPageNumber, files, List.of());
+    }
+
+    @Transactional
+    public List<ChapterPageResponse> uploadChapterPages(Long chapterId, int startPageNumber,
             List<MultipartFile> files, List<String> targetLangs) {
         currentUserService.requireAdmin();
 
@@ -597,6 +605,16 @@ public class ComicService {
         Comic comic = comicRepository.findById(comicId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy bộ truyện."));
         List<Chapter> chapterList = chapterRepository.findByComicIdOrderByChapterNumberAsc(comicId);
+
+        String libraryType = null;
+        User user = currentUserService.getCurrentUser();
+        if (user != null) {
+            Optional<UserLibrary> userLibrary = userLibraryRepository.findByUserIdAndComicId(user.getId(), comicId);
+            if (userLibrary.isPresent()) {
+                libraryType = userLibrary.get().getListType().name();
+            }
+        }
+
         return BookOverviewDTO.builder()
                 .id(comicId)
                 .title(comic.getTitle())
@@ -605,6 +623,7 @@ public class ComicService {
                 .description(comic.getDescription())
                 .averageRating(comic.getAverageRating())
                 .totalRatings(comic.getTotalRatings())
+                .libraryType(libraryType)
                 .chapters(chapterList.stream()
                         .map(chapter -> ChapterSummaryResponse.builder()
                                 .title(chapter.getTitle())
@@ -615,7 +634,6 @@ public class ComicService {
                                 .build()
                         ).collect(Collectors.toList()))
                 .build();
-
     }
 
     public ChapterOverviewResponse getChapterOverview(Long comicId, Integer chapterNumber) {

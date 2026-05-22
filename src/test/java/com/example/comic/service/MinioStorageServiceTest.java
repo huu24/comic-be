@@ -120,7 +120,7 @@ class MinioStorageServiceTest {
         doThrow(new RuntimeException("upload failed")).when(minioClient).putObject(any(PutObjectArgs.class));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> minioStorageService.uploadComicPage(7L, 3, file));
-        assertEquals("Không thể tải ảnh lên MinIO.", ex.getMessage());
+        assertTrue(ex.getMessage().startsWith("Không thể tải ảnh lên MinIO:"));
     }
 
     @Test

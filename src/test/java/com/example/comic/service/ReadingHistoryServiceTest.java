@@ -8,6 +8,7 @@ import com.example.comic.model.dto.MessageStatusResponse;
 import com.example.comic.model.dto.ReadingHistoryResponse;
 import com.example.comic.model.dto.ReadingHistorySyncRequest;
 import com.example.comic.repository.ReadingHistoryRepository;
+import com.example.comic.repository.ChapterRepository;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,24 +33,29 @@ class ReadingHistoryServiceTest {
     @Mock
     private CurrentUserService currentUserService;
 
+    @Mock
+    private ChapterRepository chapterRepository;
+
     private ReadingHistoryService readingHistoryService;
 
     @BeforeEach
     void setUp() {
-        readingHistoryService = new ReadingHistoryService(readingHistoryRepository, currentUserService);
+        readingHistoryService = new ReadingHistoryService(readingHistoryRepository, currentUserService, chapterRepository);
     }
 
     @Test
     void getByComicId_shouldReturnHistory() {
         User user = user(1L);
         ReadingHistory history = ReadingHistory.builder().userId(1L).comicId(10L).chapterId(5L).lastPageRead(12).updatedAt(Instant.parse("2025-01-01T00:00:00Z")).build();
+        com.example.comic.model.Chapter chapter = com.example.comic.model.Chapter.builder().id(5L).chapterNumber(3).build();
         when(currentUserService.requireUser()).thenReturn(user);
         when(readingHistoryRepository.findByUserIdAndComicId(1L, 10L)).thenReturn(Optional.of(history));
+        when(chapterRepository.findById(5L)).thenReturn(Optional.of(chapter));
 
         ReadingHistoryResponse response = readingHistoryService.getByComicId(10L);
 
         assertEquals(10L, response.getComicId());
-        assertEquals(5L, response.getChapterId());
+        assertEquals(3, response.getChapterNumber());
         assertEquals(12, response.getLastPageRead());
     }
 

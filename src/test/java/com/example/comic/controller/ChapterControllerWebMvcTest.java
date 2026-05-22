@@ -70,7 +70,7 @@ class ChapterControllerWebMvcTest {
     @Test
     void uploadPages_shouldReturnCreated() throws Exception {
         MockMultipartFile file = new MockMultipartFile("files", "a.png", "image/png", "abc".getBytes());
-        when(comicService.uploadChapterPages(eq(1L), eq(1), any()))
+        when(comicService.uploadChapterPages(eq(1L), eq(1), any(), any()))
             .thenReturn(List.of(ChapterPageResponse.builder().id(11L).pageNumber(1).imageUrl("img1").build()));
 
         mockMvc

@@ -2,6 +2,8 @@ package com.example.comic.service;
 
 import com.example.comic.exception.AlreadyExistsException;
 import com.example.comic.exception.NotFoundException;
+import com.example.comic.model.UserLibrary;
+import com.example.comic.model.LibraryListType;
 import com.example.comic.model.Chapter;
 import com.example.comic.model.ChapterPage;
 import com.example.comic.model.Comic;
@@ -43,25 +45,34 @@ class ComicServiceTest {
         private ChapterRepository chapterRepository;
         private ChapterPageRepository chapterPageRepository;
         private ComicRatingRepository comicRatingRepository;
-        private ComicCategoryRepository comicCategoryRepository;
         private CategoryRepository categoryRepository;
+        private ComicCategoryRepository comicCategoryRepository;
+        private ChapterCommentRepository chapterCommentRepository;
         private CurrentUserService currentUserService;
         private MinioStorageService minioStorageService;
         private ApplicationEventPublisher applicationEventPublisher;
+        private PipelineProducerService pipelineProducerService;
+        private UserLibraryRepository userLibraryRepository;
         private ComicService comicService;
 
         @BeforeEach
         void setUp() {
                 comicRepository = mock(ComicRepository.class);
+                when(comicRepository.findById(1L)).thenReturn(
+                                Optional.of(Comic.builder().id(1L).title("Mock Comic").build()));
                 chapterRepository = mock(ChapterRepository.class);
                 chapterPageRepository = mock(ChapterPageRepository.class);
                 comicRatingRepository = mock(ComicRatingRepository.class);
-                comicCategoryRepository = mock(ComicCategoryRepository.class);
                 categoryRepository = mock(CategoryRepository.class);
+                comicCategoryRepository = mock(ComicCategoryRepository.class);
+                chapterCommentRepository = mock(ChapterCommentRepository.class);
                 currentUserService = mock(CurrentUserService.class);
                 minioStorageService = mock(MinioStorageService.class);
                 when(minioStorageService.uploadComicCover(any(), any())).thenReturn("cover.png");
                 applicationEventPublisher = mock(ApplicationEventPublisher.class);
+                pipelineProducerService = mock(PipelineProducerService.class);
+                userLibraryRepository = mock(UserLibraryRepository.class);
+                
                 comicService = new ComicService(
                                 comicRepository,
                                 chapterRepository,
@@ -69,9 +80,12 @@ class ComicServiceTest {
                                 comicRatingRepository,
                                 categoryRepository,
                                 comicCategoryRepository,
+                                chapterCommentRepository,
                                 currentUserService,
                                 minioStorageService,
-                                applicationEventPublisher);
+                                applicationEventPublisher,
+                                pipelineProducerService,
+                                userLibraryRepository);
         }
 
         @Test
@@ -209,7 +223,14 @@ class ComicServiceTest {
                 when(minioStorageService.uploadComicPage(eq(5L), eq(2), any())).thenReturn("pages/2.png");
                 when(chapterPageRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
                 when(minioStorageService.resolvePublicUrl(any()))
-                                .thenAnswer(invocation -> "public:" + invocation.getArgument(0));
+                                .thenAnswer(invocation -> {
+                                        String src = invocation.getArgument(0);
+                                        if (src == null) return null;
+                                        if (src.startsWith("public:") || src.startsWith("http://") || src.startsWith("https://")) {
+                                                return src;
+                                        }
+                                        return "public:" + src;
+                                });
 
                 List<ChapterPageResponse> responses = comicService.uploadChapterPages(
                                 5L,
@@ -408,7 +429,14 @@ class ComicServiceTest {
                 when(minioStorageService.uploadComicPage(eq(5L), eq(1), any())).thenReturn("pages/1.webp");
                 when(chapterPageRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
                 when(minioStorageService.resolvePublicUrl(any()))
-                                .thenAnswer(invocation -> "public:" + invocation.getArgument(0));
+                                .thenAnswer(invocation -> {
+                                        String src = invocation.getArgument(0);
+                                        if (src == null) return null;
+                                        if (src.startsWith("public:") || src.startsWith("http://") || src.startsWith("https://")) {
+                                                return src;
+                                        }
+                                        return "public:" + src;
+                                });
 
                 List<ChapterPageResponse> responses = comicService.uploadChapterPages(
                                 5L,
@@ -540,6 +568,46 @@ class ComicServiceTest {
                 verify(comicRatingRepository).save(ratingCaptor.capture());
                 assertEquals(3L, ratingCaptor.getValue().getUserId());
                 assertEquals(11L, ratingCaptor.getValue().getComicId());
+        }
+
+        @Test
+        void getBookOverview_shouldReturnLibraryTypeWhenUserLoggedIn() {
+                User current = user(3L, "user@example.com");
+                when(currentUserService.getCurrentUser()).thenReturn(current);
+                when(comicRepository.findById(11L)).thenReturn(
+                                Optional.of(Comic.builder().id(11L).title("Comic").build()));
+                when(chapterRepository.findByComicIdOrderByChapterNumberAsc(11L)).thenReturn(List.of());
+                
+                UserLibrary userLibrary = UserLibrary.builder()
+                                .userId(3L)
+                                .comicId(11L)
+                                .listType(LibraryListType.FAVORITE)
+                                .build();
+                when(userLibraryRepository.findByUserIdAndComicId(3L, 11L)).thenReturn(Optional.of(userLibrary));
+
+                com.example.comic.model.dto.BookOverviewDTO response = comicService.getBookOverview(11L);
+
+                assertEquals("FAVORITE", response.getLibraryType());
+        }
+
+        @Test
+        void getBookOverview_shouldReturnNullLibraryTypeWhenGuestOrNotSaved() {
+                // Case 1: Guest (not logged in)
+                when(currentUserService.getCurrentUser()).thenReturn(null);
+                when(comicRepository.findById(11L)).thenReturn(
+                                Optional.of(Comic.builder().id(11L).title("Comic").build()));
+                when(chapterRepository.findByComicIdOrderByChapterNumberAsc(11L)).thenReturn(List.of());
+
+                com.example.comic.model.dto.BookOverviewDTO response1 = comicService.getBookOverview(11L);
+                assertEquals(null, response1.getLibraryType());
+
+                // Case 2: User logged in, but comic not saved in library
+                User current = user(3L, "user@example.com");
+                when(currentUserService.getCurrentUser()).thenReturn(current);
+                when(userLibraryRepository.findByUserIdAndComicId(3L, 11L)).thenReturn(Optional.empty());
+
+                com.example.comic.model.dto.BookOverviewDTO response2 = comicService.getBookOverview(11L);
+                assertEquals(null, response2.getLibraryType());
         }
 
         private static User user(Long id, String email) {
