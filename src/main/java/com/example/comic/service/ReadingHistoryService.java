@@ -23,15 +23,30 @@ public class ReadingHistoryService {
     private final CurrentUserService currentUserService;
     private final ChapterRepository chapterRepository;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ReadingHistoryResponse getByComicId(Long comicId) {
         User user = currentUserService.requireUser();
         ReadingHistory history = readingHistoryRepository
             .findByUserIdAndComicId(user.getId(), comicId)
-            .orElseThrow(() -> new NotFoundException("Chưa có lịch sử đọc cho bộ truyện này."));
+            .orElseGet(() -> {
+                java.util.List<Chapter> chapters = chapterRepository.findByComicIdOrderByChapterNumberAsc(comicId);
+                if (chapters.isEmpty()) {
+                    throw new NotFoundException("Chưa có lịch sử đọc cho bộ truyện này.");
+                }
+                Chapter firstChapter = chapters.get(0);
+                ReadingHistory newHistory = ReadingHistory
+                    .builder()
+                    .userId(user.getId())
+                    .comicId(comicId)
+                    .chapterId(firstChapter.getId())
+                    .lastPageRead(0)
+                    .updatedAt(Instant.now())
+                    .build();
+                return readingHistoryRepository.save(newHistory);
+            });
         Chapter chapter = chapterRepository
-        .findById(history.getChapterId())
-        .orElseThrow(() -> new NotFoundException("Không tìm thấy Chapter ID: " + history.getChapterId() + " trong hệ thống."));
+            .findById(history.getChapterId())
+            .orElseThrow(() -> new NotFoundException("Không tìm thấy Chapter ID: " + history.getChapterId() + " trong hệ thống."));
 
         return ReadingHistoryResponse
             .builder()

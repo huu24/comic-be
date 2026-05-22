@@ -105,12 +105,31 @@ class ReadingHistoryServiceTest {
     }
 
     @Test
-    void getByComicId_shouldThrowWhenHistoryMissing() {
+    void getByComicId_shouldThrowWhenHistoryAndChaptersMissing() {
         User user = user(1L);
         when(currentUserService.requireUser()).thenReturn(user);
         when(readingHistoryRepository.findByUserIdAndComicId(1L, 99L)).thenReturn(Optional.empty());
+        when(chapterRepository.findByComicIdOrderByChapterNumberAsc(99L)).thenReturn(java.util.Collections.emptyList());
 
         assertThrows(NotFoundException.class, () -> readingHistoryService.getByComicId(99L));
+    }
+
+    @Test
+    void getByComicId_shouldCreateNewHistoryWhenMissingButChaptersExist() {
+        User user = user(1L);
+        com.example.comic.model.Chapter firstChapter = com.example.comic.model.Chapter.builder().id(100L).chapterNumber(1).build();
+        when(currentUserService.requireUser()).thenReturn(user);
+        when(readingHistoryRepository.findByUserIdAndComicId(1L, 99L)).thenReturn(Optional.empty());
+        when(chapterRepository.findByComicIdOrderByChapterNumberAsc(99L)).thenReturn(java.util.List.of(firstChapter));
+        when(readingHistoryRepository.save(any(ReadingHistory.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(chapterRepository.findById(100L)).thenReturn(Optional.of(firstChapter));
+
+        ReadingHistoryResponse response = readingHistoryService.getByComicId(99L);
+
+        assertEquals(99L, response.getComicId());
+        assertEquals(1, response.getChapterNumber());
+        assertEquals(0, response.getLastPageRead());
+        verify(readingHistoryRepository).save(any(ReadingHistory.class));
     }
 
     @Test
