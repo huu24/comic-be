@@ -7,5 +7,5 @@ build then run:
 
 if `docker compose up -d` fail first time with comic_db error, run it again.
 
-insert data:
-`docker exec -it comic_db psql -U postgres -d comic -f /docker-entrypoint-initdb.d/insert-data.sql`
+insert mock data:
+`docker exec -it comic_db psql -U postgres -d comic -f /insert-data.sql`
