@@ -1,7 +1,9 @@
 package com.example.comic.controller;
 
 import com.example.comic.model.dto.MessageResponse;
+import com.example.comic.model.dto.PageDataResponse;
 import com.example.comic.model.dto.ReadingHistoryResponse;
+import com.example.comic.model.dto.UserReadingHistoryItemResponse;
 import com.example.comic.security.JwtAuthenticationFilter;
 import com.example.comic.security.SecurityConfiguration;
 import com.example.comic.service.ReadingHistoryService;
@@ -95,5 +97,33 @@ class ReadingHistoryControllerWebMvcTest {
             )
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error.status").value("INVALID_ARGUMENT"));
+    }
+    @Test
+    void getReadingHistory_shouldReturnPageDataResponse() throws Exception {
+        UserReadingHistoryItemResponse item = UserReadingHistoryItemResponse.builder()
+            .comicId(10L)
+            .title("Comic Title")
+            .chapterNumber(2)
+            .lastPageRead(2)
+            .updatedAt(Instant.parse("2025-01-01T00:00:00Z"))
+            .build();
+
+        PageDataResponse<UserReadingHistoryItemResponse> pageResponse = PageDataResponse.<UserReadingHistoryItemResponse>builder()
+            .content(java.util.List.of(item))
+            .pageNo(0)
+            .pageSize(10)
+            .totalElements(1)
+            .totalPages(1)
+            .last(true)
+            .build();
+
+        when(readingHistoryService.getReadingHistory(0, 10)).thenReturn(pageResponse);
+
+        mockMvc
+            .perform(get("/reading-histories").param("page", "0").param("size", "10"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.content[0].comicId").value(10))
+            .andExpect(jsonPath("$.data.content[0].title").value("Comic Title"))
+            .andExpect(jsonPath("$.data.content[0].chapterNumber").value(2));
     }
 }

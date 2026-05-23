@@ -9,6 +9,15 @@ import com.example.comic.model.dto.ReadingHistoryResponse;
 import com.example.comic.model.dto.ReadingHistorySyncRequest;
 import com.example.comic.repository.ReadingHistoryRepository;
 import com.example.comic.repository.ChapterRepository;
+import com.example.comic.model.Comic;
+import com.example.comic.model.dto.PageDataResponse;
+import com.example.comic.model.dto.UserReadingHistoryItemResponse;
+import com.example.comic.repository.ComicRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,11 +45,14 @@ class ReadingHistoryServiceTest {
     @Mock
     private ChapterRepository chapterRepository;
 
+    @Mock
+    private ComicRepository comicRepository;
+
     private ReadingHistoryService readingHistoryService;
 
     @BeforeEach
     void setUp() {
-        readingHistoryService = new ReadingHistoryService(readingHistoryRepository, currentUserService, chapterRepository);
+        readingHistoryService = new ReadingHistoryService(readingHistoryRepository, currentUserService, chapterRepository, comicRepository);
     }
 
     @Test
@@ -158,6 +170,51 @@ class ReadingHistoryServiceTest {
         assertEquals(6L, history.getChapterId());
         assertEquals(20, history.getLastPageRead());
         verify(readingHistoryRepository).save(history);
+    }
+
+    @Test
+    void getReadingHistory_shouldReturnPaginatedHistoriesWithComicAndChapterDetails() {
+        User user = user(1L);
+        when(currentUserService.requireUser()).thenReturn(user);
+
+        ReadingHistory history = ReadingHistory.builder()
+            .userId(1L)
+            .comicId(10L)
+            .chapterId(5L)
+            .lastPageRead(2)
+            .updatedAt(Instant.parse("2025-01-01T00:00:00Z"))
+            .build();
+        
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("updatedAt").descending());
+        Page<ReadingHistory> page = new PageImpl<>(java.util.List.of(history), pageable, 1);
+        when(readingHistoryRepository.findByUserId(1L, pageable)).thenReturn(page);
+
+        Comic comic = Comic.builder()
+            .id(10L)
+            .title("Comic Title")
+            .author("Author")
+            .coverImageUrl("http://cover.jpg")
+            .originalLanguage("ja")
+            .status("ONGOING")
+            .format("MANGA")
+            .averageRating(4.5)
+            .build();
+        when(comicRepository.findAllById(java.util.Set.of(10L))).thenReturn(java.util.List.of(comic));
+
+        com.example.comic.model.Chapter chapter = com.example.comic.model.Chapter.builder()
+            .id(5L)
+            .chapterNumber(2)
+            .build();
+        when(chapterRepository.findAllById(java.util.Set.of(5L))).thenReturn(java.util.List.of(chapter));
+
+        PageDataResponse<UserReadingHistoryItemResponse> response = readingHistoryService.getReadingHistory(0, 10);
+
+        assertEquals(1, response.getContent().size());
+        UserReadingHistoryItemResponse item = response.getContent().get(0);
+        assertEquals(10L, item.getComicId());
+        assertEquals("Comic Title", item.getTitle());
+        assertEquals(2, item.getChapterNumber());
+        assertEquals(2, item.getLastPageRead());
     }
 
     private static User user(Long id) {
