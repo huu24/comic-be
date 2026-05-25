@@ -15,4 +15,5 @@ public class AdminTopComicResponse {
     private String title;
     private Double averageRating;
     private Integer totalRatings;
+    private String coverImageUrl;   
 }

@@ -108,7 +108,7 @@ public class AdminService {
         currentUserService.requireAdmin();
 
         List<AdminTopComicResponse> topComics = comicRepository
-            .findTop5ByOrderByTotalRatingsDescUpdatedAtDesc()
+            .findTop5ByOrderByAverageRatingDescUpdatedAtDesc()
             .stream()
             .map(comic ->
                 AdminTopComicResponse
@@ -117,6 +117,7 @@ public class AdminService {
                     .title(comic.getTitle())
                     .averageRating(comic.getAverageRating() == null ? 0D : comic.getAverageRating())
                     .totalRatings(comic.getTotalRatings() == null ? 0 : comic.getTotalRatings())
+                    .coverImageUrl(comic.getCoverImageUrl())
                     .build()
             )
             .toList();
