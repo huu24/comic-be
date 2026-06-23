@@ -30,7 +30,7 @@ class PageServiceTest {
     private PageTranslationRepository pageTranslationRepository;
     private MinioStorageService minioStorageService;
     private ObjectMapper objectMapper;
-    private PageService pageService;
+    private PageCachedService pageCachedService;
 
     @BeforeEach
     void setUp() {
@@ -38,18 +38,18 @@ class PageServiceTest {
         pageTranslationRepository = mock(PageTranslationRepository.class);
         minioStorageService = mock(MinioStorageService.class);
         objectMapper = new ObjectMapper();
-        pageService = new PageService(
-                chapterPageRepository,
+        pageCachedService = new PageCachedService(
                 pageTranslationRepository,
                 minioStorageService,
-                objectMapper);
+                objectMapper,
+                chapterPageRepository);
     }
 
     @Test
     void getPageDetail_shouldThrowWhenPageNotFound() {
         when(chapterPageRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> pageService.getPageDetail(99L, "vi"));
+        assertThrows(NotFoundException.class, () -> pageCachedService.getPageDetailCached(99L, "vi"));
     }
 
     @Test
@@ -66,7 +66,7 @@ class PageServiceTest {
         when(minioStorageService.resolvePublicUrl("pages/1.png")).thenReturn("http://cdn/pages/1.png");
         when(minioStorageService.resolvePublicUrl("cleaned/1.png")).thenReturn("http://cdn/cleaned/1.png");
 
-        PageDetailResponse response = pageService.getPageDetail(1L, "vi");
+        PageDetailResponse response = pageCachedService.getPageDetailCached(1L, "vi");
 
         assertEquals(1L, response.getPageId());
         assertEquals(10L, response.getChapterId());
@@ -101,7 +101,7 @@ class PageServiceTest {
         when(minioStorageService.resolvePublicUrl("pages/1.png")).thenReturn("http://cdn/pages/1.png");
         when(minioStorageService.resolvePublicUrl("cleaned/1.png")).thenReturn("http://cdn/cleaned/1.png");
 
-        PageDetailResponse response = pageService.getPageDetail(1L, "vi");
+        PageDetailResponse response = pageCachedService.getPageDetailCached(1L, "vi");
 
         assertNotNull(response.getBubbles());
         assertEquals(1, response.getBubbles().size());
@@ -127,7 +127,7 @@ class PageServiceTest {
         when(minioStorageService.resolvePublicUrl("pages/1.png")).thenReturn("http://cdn/pages/1.png");
         when(minioStorageService.resolvePublicUrl(null)).thenReturn(null);
 
-        PageDetailResponse response = pageService.getPageDetail(1L, "vi");
+        PageDetailResponse response = pageCachedService.getPageDetailCached(1L, "vi");
 
         assertNull(response.getBubbles());
         assertEquals("http://cdn/pages/1.png", response.getImages().getOriginalUrl());
@@ -154,7 +154,7 @@ class PageServiceTest {
         when(minioStorageService.resolvePublicUrl("pages/1.png")).thenReturn("http://cdn/pages/1.png");
         when(minioStorageService.resolvePublicUrl("cleaned/1.png")).thenReturn("http://cdn/cleaned/1.png");
 
-        PageDetailResponse response = pageService.getPageDetail(1L, "en");
+        PageDetailResponse response = pageCachedService.getPageDetailCached(1L, "en");
 
         assertEquals(2, response.getBubbles().size());
         // bubble id=1 should NOT have translation
@@ -181,7 +181,7 @@ class PageServiceTest {
                 when(minioStorageService.resolvePublicUrl("pages/1.png")).thenReturn("http://cdn/pages/1.png");
                 when(minioStorageService.resolvePublicUrl("cleaned/1.png")).thenReturn("http://cdn/cleaned/1.png");
 
-                PageDetailResponse response = pageService.getPageDetail(1L, "vi");
+                PageDetailResponse response = pageCachedService.getPageDetailCached(1L, "vi");
 
                 assertNull(response.getBubbles());
                 verify(minioStorageService, never()).downloadObjectAsString("metadata/translation_vi.json");
@@ -192,9 +192,9 @@ class PageServiceTest {
                 ArrayNode original = (ArrayNode) objectMapper.readTree("[{\"id\":1,\"original_text\":\"A\"},2,{\"id\":3,\"original_text\":\"C\",\"chunks\":[{\"chunk_id\":\"c3\"}]}]");
                 JsonNode translation = objectMapper.readTree("[{\"id\":-1,\"full_translation\":\"ignored\"},{\"id\":1},{\"id\":3,\"chunk_meanings\":[{\"chunk_id\":\"c3\",\"meaning\":\"x\"}]}]");
 
-                pageService.mergeBubbles(original, null);
-                pageService.mergeBubbles(original, objectMapper.readTree("{}"));
-                pageService.mergeBubbles(original, translation);
+                pageCachedService.mergeBubbles(original, null);
+                pageCachedService.mergeBubbles(original, objectMapper.readTree("{}"));
+                pageCachedService.mergeBubbles(original, translation);
 
                 assertNull(original.get(0).get("full_translation"));
                 assertNull(original.get(0).get("chunks"));
@@ -221,7 +221,7 @@ class PageServiceTest {
                 when(minioStorageService.resolvePublicUrl("pages/1.png")).thenReturn("http://cdn/pages/1.png");
                 when(minioStorageService.resolvePublicUrl("cleaned/1.png")).thenReturn("http://cdn/cleaned/1.png");
 
-                PageDetailResponse response = pageService.getPageDetail(1L, "vi");
+                PageDetailResponse response = pageCachedService.getPageDetailCached(1L, "vi");
 
                 assertEquals("A", response.getBubbles().get(0).get("original_text").asText());
                 assertNull(response.getBubbles().get(0).get("full_translation"));
@@ -239,7 +239,7 @@ class PageServiceTest {
                 when(minioStorageService.resolvePublicUrl("pages/1.png")).thenReturn("http://cdn/pages/1.png");
                 when(minioStorageService.resolvePublicUrl("cleaned/1.png")).thenReturn("http://cdn/cleaned/1.png");
 
-                PageDetailResponse response = pageService.getPageDetail(1L, "vi");
+                PageDetailResponse response = pageCachedService.getPageDetailCached(1L, "vi");
 
                 assertNull(response.getBubbles());
                 verify(minioStorageService, never()).downloadObjectAsString("   ");
@@ -265,7 +265,7 @@ class PageServiceTest {
                 when(minioStorageService.resolvePublicUrl("pages/1.png")).thenReturn("http://cdn/pages/1.png");
                 when(minioStorageService.resolvePublicUrl("cleaned/1.png")).thenReturn("http://cdn/cleaned/1.png");
 
-                PageDetailResponse response = pageService.getPageDetail(1L, "vi");
+                PageDetailResponse response = pageCachedService.getPageDetailCached(1L, "vi");
 
                 assertNotNull(response.getBubbles());
                 assertTrue(response.getBubbles().isObject());
@@ -277,7 +277,7 @@ class PageServiceTest {
                 ArrayNode original = (ArrayNode) objectMapper.readTree("[2,{\"id\":1,\"original_text\":\"A\"}]");
                 JsonNode translation = objectMapper.readTree("[{\"id\":2,\"full_translation\":\"two\"},{\"id\":1,\"full_translation\":\"one\"}]");
 
-                pageService.mergeBubbles(original, translation);
+                pageCachedService.mergeBubbles(original, translation);
 
                 assertEquals("one", original.get(1).get("full_translation").asText());
         }
@@ -299,8 +299,8 @@ class PageServiceTest {
                 when(minioStorageService.resolvePublicUrl("pages/1.png")).thenReturn("http://cdn/pages/1.png");
                 when(minioStorageService.resolvePublicUrl("cleaned/1.png")).thenReturn("http://cdn/cleaned/1.png");
 
-                PageDetailResponse first = pageService.getPageDetail(1L, "vi");
-                PageDetailResponse second = pageService.getPageDetail(1L, "vi");
+                PageDetailResponse first = pageCachedService.getPageDetailCached(1L, "vi");
+                PageDetailResponse second = pageCachedService.getPageDetailCached(1L, "vi");
 
                 assertNull(first.getBubbles());
                 assertNull(second.getBubbles());
@@ -318,7 +318,7 @@ class PageServiceTest {
 
                 JsonNode translation = objectMapper.readTree("[{\"id\":7,\"full_translation\":\"Seven\"}]");
 
-                pageService.mergeBubbles(original, translation);
+                pageCachedService.mergeBubbles(original, translation);
 
                 verify(fakeNode).isObject();
         }

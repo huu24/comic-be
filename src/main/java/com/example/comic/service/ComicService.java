@@ -8,10 +8,9 @@ import com.example.comic.model.*;
 import com.example.comic.model.dto.*;
 import com.example.comic.repository.*;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.Set;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
@@ -19,6 +18,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,6 +46,7 @@ public class ComicService {
     private final PipelineProducerService pipelineProducerService;
     private final UserLibraryRepository userLibraryRepository;
     private final ReadingHistoryRepository readingHistoryRepository;
+    private final StringRedisTemplate redisTemplate;
 
     @Transactional
     public ComicCreateResponse createComic(ComicCreateRequest request, MultipartFile coverImage) {
@@ -662,5 +663,61 @@ public class ComicService {
             applicationEventPublisher.publishEvent(new ComicSavedEvent(comic));
         }
         return allComics.size();
+    }
+    public List<ComicOverviewDTO> getTrendingToday() {
+
+        Set<String> comicIds =
+                redisTemplate.opsForZSet()
+                        .reverseRange(
+                                "comic:trending:" + LocalDate.now().toString(),
+                                0,
+                                9
+                        );
+
+        if (comicIds == null || comicIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, Comic> comicMap =
+                comicRepository.findAllById(
+                                comicIds.stream()
+                                        .map(Long::parseLong)
+                                        .toList()
+                        )
+                        .stream()
+                        .collect(
+                                Collectors.toMap(
+                                        Comic::getId,
+                                        Function.identity()
+                                )
+                        );
+
+        return comicIds.stream()
+                .map(Long::parseLong)
+                .map(comicMap::get)
+                .filter(Objects::nonNull)
+                .map(comic -> {
+
+                    String cachedViewStr =
+                            redisTemplate.opsForValue()
+                                    .get("comic:view:" + comic.getId());
+
+                    int cachedView =
+                            cachedViewStr == null
+                                    ? 0
+                                    : Integer.parseInt(cachedViewStr);
+
+                    return ComicOverviewDTO.builder()
+                            .id(comic.getId())
+                            .title(comic.getTitle())
+                            .coverImageUrl(comic.getCoverImageUrl())
+                            .author(comic.getAuthor())
+                            .description(comic.getDescription())
+                            .averageRating(comic.getAverageRating())
+                            .totalRatings(comic.getTotalRatings())
+                            .views(comic.getViews() + cachedView)
+                            .build();
+                })
+                .toList();
     }
 }

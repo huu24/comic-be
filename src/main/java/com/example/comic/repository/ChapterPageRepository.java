@@ -14,4 +14,5 @@ public interface ChapterPageRepository extends JpaRepository<ChapterPage, Long> 
     void deleteByChapterId(Long chapterId);
 
     long countByChapterId(Long chapterId);
+
 }

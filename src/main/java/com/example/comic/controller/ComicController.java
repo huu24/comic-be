@@ -1,5 +1,6 @@
 package com.example.comic.controller;
 
+import com.example.comic.annotation.RateLimit;
 import com.example.comic.model.Category;
 import com.example.comic.model.dto.*;
 import com.example.comic.model.dto.ComicDetailSearchResult;
@@ -7,6 +8,8 @@ import com.example.comic.model.dto.ComicSearchResult;
 import com.example.comic.model.dto.ReindexResponse;
 import com.example.comic.service.ComicSearchService;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import com.example.comic.service.ComicService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -198,7 +201,21 @@ public class ComicController {
         );
     }
 
+    @GetMapping("/trending-today")
+    public ResponseEntity<DataResponse<List<ComicOverviewDTO>>> getTrendingToday() {
+        return ResponseEntity.ok(
+                DataResponse.<List<ComicOverviewDTO>>builder()
+                        .data(comicService.getTrendingToday())
+                        .build()
+        );
+    }
+
     @PutMapping("/{comicId}/ratings")
+    @RateLimit(
+            duration = 1,
+            limit = 30,
+            unit = TimeUnit.MINUTES
+    )
     public ResponseEntity<RateComicResponse> rateComic(
             @PathVariable Long comicId,
             @Valid @RequestBody ComicRatingRequest request) {

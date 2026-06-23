@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -40,4 +41,12 @@ public interface ComicRepository extends JpaRepository<Comic, Long> {
       @Param("comicStatus") String comicStatus,
       Pageable pageable
   );
+
+    @Modifying
+    @Query("""
+    UPDATE Comic c
+    SET c.views = c.views + :views
+    WHERE c.id = :comicId
+""")
+    void increaseViews(@Param("comicId") Long comicId, @Param("views") Long views);
 }

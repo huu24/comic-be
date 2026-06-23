@@ -76,6 +76,8 @@ public class Comic {
         createdAt = now;
         updatedAt = now;
     }
+    @Column(name = "views")
+    private int views = 0;
 
     @PreUpdate
     public void onUpdate() {

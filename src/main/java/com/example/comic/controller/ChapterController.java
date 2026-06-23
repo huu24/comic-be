@@ -1,5 +1,6 @@
 package com.example.comic.controller;
 
+import com.example.comic.annotation.RateLimit;
 import com.example.comic.model.dto.ChapterCommentCreateRequest;
 import com.example.comic.model.dto.ChapterCommentResponse;
 import com.example.comic.model.dto.ChapterPageResponse;
@@ -10,6 +11,8 @@ import com.example.comic.service.ChapterCommentService;
 import com.example.comic.service.ComicService;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -80,7 +83,11 @@ public class ChapterController {
                 .build()
         );
     }
-
+    @RateLimit(
+            limit = 5,
+            duration = 1,
+            unit = TimeUnit.MINUTES
+    )
     @PostMapping("/{chapterId}/comments")
     public ResponseEntity<DataResponse<ChapterCommentResponse>> createComment(
         @PathVariable Long chapterId,
